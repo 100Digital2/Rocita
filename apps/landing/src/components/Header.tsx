@@ -1,0 +1,50 @@
+﻿import { MessageSquare, Phone, Mail, Menu } from 'lucide-react';
+
+export default function Header() {
+  return (
+    <header className='fixed top-0 z-50 w-full border-b border-white/20 bg-white/40 backdrop-blur-xl px-6 py-4'>
+      <div className='max-w-7xl mx-auto flex items-center justify-between'>
+        <div className='flex items-center gap-2 group cursor-pointer'>
+          <div className='relative'>
+            <div className='w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform'>
+              R
+            </div>
+            <div className='absolute -top-1 -right-1 w-3 h-3 bg-rocita-red rounded-full border-2 border-white animate-pulse'></div>
+          </div>
+          <span className='text-2xl font-black tracking-tighter'>
+            Roc<span className='text-rocita-red'>i</span>ta
+          </span>
+        </div>
+        
+        <nav className='hidden lg:flex items-center gap-10 text-sm font-bold text-zinc-600'>
+          <a href='#servicios' className='hover:text-primary transition-colors'>Servicios</a>
+          <a href='#beneficios' className='hover:text-primary transition-colors'>Beneficios</a>
+          <a href='#integraciones' className='hover:text-primary transition-colors'>Integraciones</a>
+          <div className='flex items-center gap-6 border-l border-zinc-200 pl-10'>
+             <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>
+              <MessageSquare size={18} className='group-hover:scale-110 transition-transform' />
+              <span>WhatsApp</span>
+            </div>
+            <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>
+              <Phone size={18} className='group-hover:scale-110 transition-transform' />
+              <span>SMS</span>
+            </div>
+            <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>
+              <Mail size={18} className='group-hover:scale-110 transition-transform' />
+              <span>Correo</span>
+            </div>
+          </div>
+        </nav>
+
+        <div className='flex items-center gap-4'>
+          <button className='bg-zinc-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-zinc-800 transition-all shadow-md active:scale-95'>
+            Agendar Demo
+          </button>
+          <button className='lg:hidden p-2 text-zinc-600'>
+            <Menu size={24} />
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
