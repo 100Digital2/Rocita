@@ -5,7 +5,7 @@ import CTASection from '@/components/CTASection';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background selection:bg-rocita-red/20">
+    <main className="min-h-screen bg-background selection:bg-sky-500/20">
       <Header />
       <Hero />
       <Features />
@@ -17,7 +17,7 @@ export default function Home() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-8">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">R</div>
-              <span className="text-3xl font-black tracking-tighter">Roc<span className="text-rocita-red">i</span>ta</span>
+              <span className="text-3xl font-black tracking-tighter"><span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span></span>
             </div>
             <p className="text-zinc-500 text-lg max-w-xs leading-relaxed">
               La inteligencia artificial al servicio de la salud. Optimizando la conexión entre pacientes e instituciones en 100Digital.
@@ -26,19 +26,19 @@ export default function Home() {
           <div>
             <h4 className="font-black mb-8 text-zinc-900 uppercase text-xs tracking-widest">Producto</h4>
             <ul className="space-y-4 text-zinc-600 font-medium">
-              <li><a href="#" className="hover:text-rocita-red transition-colors">Funcionalidades</a></li>
-              <li><a href="#" className="hover:text-rocita-red transition-colors">Integraciones</a></li>
-              <li><a href="#" className="hover:text-rocita-red transition-colors">Documentación API</a></li>
-              <li><a href="#" className="hover:text-rocita-red transition-colors">Seguridad</a></li>
+              <li><a href="#" className="hover:text-sky-500 transition-colors">Funcionalidades</a></li>
+              <li><a href="#" className="hover:text-sky-500 transition-colors">Integraciones</a></li>
+              <li><a href="#" className="hover:text-sky-500 transition-colors">Documentación API</a></li>
+              <li><a href="#" className="hover:text-sky-500 transition-colors">Seguridad</a></li>
             </ul>
           </div>
           <div>
             <h4 className="font-black mb-8 text-zinc-900 uppercase text-xs tracking-widest">Legal</h4>
             <ul className="space-y-4 text-zinc-600 font-medium">
-              <li><a href="#" className="hover:text-rocita-red transition-colors">Privacidad</a></li>
-              <li><a href="#" className="hover:text-rocita-red transition-colors">Habeas Data</a></li>
-              <li><a href="#" className="hover:text-rocita-red transition-colors">ANS</a></li>
-              <li><a href="#" className="hover:text-rocita-red transition-colors">Términos</a></li>
+              <li><a href="#" className="hover:text-sky-500 transition-colors">Privacidad</a></li>
+              <li><a href="#" className="hover:text-sky-500 transition-colors">Habeas Data</a></li>
+              <li><a href="#" className="hover:text-sky-500 transition-colors">ANS</a></li>
+              <li><a href="#" className="hover:text-sky-500 transition-colors">Términos</a></li>
             </ul>
           </div>
         </div>

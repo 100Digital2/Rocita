@@ -2,17 +2,17 @@ import { MessageSquare, Phone, Mail, Menu, UserCircle } from 'lucide-react';
 
 export default function Header() {
   return (
-    <header className='fixed top-0 z-50 w-full border-b border-white/20 bg-white/40 backdrop-blur-xl px-6 py-4'>
+    <header className='fixed top-0 z-50 w-full border-b border-white/20 bg-white/40 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4'>
       <div className='max-w-7xl mx-auto flex items-center justify-between'>
         <div className='flex items-center gap-2 group cursor-pointer'>
           <div className='relative'>
-            <div className='w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform'>
+            <div className='w-8 h-8 md:w-10 md:h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-lg md:text-xl shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform'>
               R
             </div>
-            <div className='absolute -top-1 -right-1 w-3 h-3 bg-rocita-red rounded-full border-2 border-white animate-pulse'></div>
+            <div className='absolute -top-1 -right-1 w-2.5 h-2.5 md:w-3 md:h-3 bg-sky-500 rounded-full border-2 border-white animate-pulse'></div>
           </div>
-          <span className='text-2xl font-black tracking-tighter'>
-            Roc<span className='text-rocita-red'>i</span>ta
+          <span className='text-xl md:text-2xl font-black tracking-tighter'>
+            <span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>
           </span>
         </div>
 
@@ -36,15 +36,15 @@ export default function Header() {
           </div>
         </nav>
 
-        <div className='flex items-center gap-4'>
-          <a 
-            href="http://localhost:3001/login" 
+        <div className='flex items-center gap-2 md:gap-4'>
+          <a
+            href="http://localhost:3001/login"
             className='hidden md:flex items-center gap-2 text-zinc-600 font-bold hover:text-primary transition-all px-4 py-2 rounded-lg'
           >
             <UserCircle size={20} />
             Ingresar
           </a>
-          <button className='bg-zinc-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-zinc-800 transition-all shadow-md active:scale-95'>
+          <button className='bg-zinc-900 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold hover:bg-zinc-800 transition-all shadow-md active:scale-95 text-sm md:text-base'>
             Agendar Demo
           </button>
           <button className='lg:hidden p-2 text-zinc-600'>
