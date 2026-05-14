@@ -22,40 +22,66 @@ export default function Hero() {
             Operativa en 100Digital
           </motion.div>
 
-          {/* SHOWROOM DE ESTILOS RO-CITA */}
-          <div className="mb-16 p-10 bg-white/50 backdrop-blur-xl rounded-[3rem] border border-blue-100 shadow-2xl shadow-sky-900/5 max-w-4xl mx-auto w-full">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-500 mb-10">Laboratorio de Identidad Visual</p>
+          
+          {/* REFINAMIENTO PREMIUM DE OPCIÓN 2 */}
+          <div className="mb-16 p-12 bg-white/40 backdrop-blur-2xl rounded-[4rem] border border-white/50 shadow-2xl shadow-sky-900/5 max-w-5xl mx-auto w-full relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
-              {/* Opción 1: El Contraste de Pesos */}
-              <div className="flex flex-col items-center gap-4 group cursor-pointer">
-                <div className="text-5xl transition-transform group-hover:scale-110 duration-500">
-                  <span className="font-black tracking-tighter text-slate-900">Ro</span>
-                  <span className="font-light tracking-wide text-slate-900">cita</span>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-600 mb-12 opacity-60">Fase de Refinamiento: Evolución de Opción 2</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-center">
+              
+              {/* Refinamiento A: El Gradiente de Salud */}
+              <div className="flex flex-col items-center gap-6 group cursor-pointer p-8 hover:bg-white/60 rounded-[3rem] transition-all duration-500 border border-transparent hover:border-sky-100 hover:shadow-xl hover:shadow-sky-500/5">
+                <div className="text-6xl tracking-tighter">
+                  <span className="font-black text-slate-900">Ro</span>
+                  <span className="font-black bg-clip-text text-transparent bg-gradient-to-br from-sky-400 to-blue-600">cita</span>
                 </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tech + Humano</span>
+                <div className="flex flex-col items-center gap-1">
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel 1</span>
+                   <span className="text-xs font-bold text-sky-600">Gradiente Fluido</span>
+                </div>
               </div>
 
-              {/* Opción 2: El Salto de Color (Recomendada) */}
-              <div className="flex flex-col items-center gap-4 group cursor-pointer p-6 bg-sky-50 rounded-[2rem] border border-sky-100">
-                <div className="text-5xl transition-transform group-hover:scale-110 duration-500">
-                  <span className="font-extrabold tracking-tight text-slate-900">Ro</span>
-                  <span className="font-extrabold tracking-tight text-sky-500">cita</span>
+              {/* Refinamiento B: La Chispa de Inteligencia (Sparkle) */}
+              <div className="flex flex-col items-center gap-6 group cursor-pointer p-8 bg-white/80 rounded-[3rem] border border-sky-100 shadow-xl shadow-sky-500/10 scale-110 relative">
+                <div className="absolute -top-2 -right-2 bg-sky-500 text-white p-2 rounded-full shadow-lg shadow-sky-500/40 animate-bounce">
+                  <Sparkles size={16} />
                 </div>
-                <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">SaaS Moderno</span>
+                <div className="text-6xl tracking-tighter">
+                  <span className="font-black text-slate-900">Ro</span>
+                  <span className="font-black text-sky-500 relative">
+                    cita
+                    <span className="absolute -top-1 -right-4 w-3 h-3 bg-sky-400 rounded-full blur-[2px] opacity-40"></span>
+                  </span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                   <span className="text-[10px] font-black text-sky-500 uppercase tracking-widest">Nivel 2</span>
+                   <span className="text-xs font-black text-slate-900">Capa de IA Activa</span>
+                </div>
               </div>
 
-              {/* Opción 3: Fusión de Tipografías */}
-              <div className="flex flex-col items-center gap-4 group cursor-pointer">
-                <div className="text-5xl transition-transform group-hover:scale-110 duration-500">
-                  <span className="font-mono font-bold tracking-tighter text-sky-600">Ro</span>
-                  <span className="font-sans font-medium text-sky-600">cita</span>
+              {/* Refinamiento C: El Brillo Glassmorphism */}
+              <div className="flex flex-col items-center gap-6 group cursor-pointer p-8 hover:bg-white/60 rounded-[3rem] transition-all duration-500 border border-transparent hover:border-sky-100">
+                <div className="text-6xl tracking-tighter drop-shadow-[0_10px_10px_rgba(14,165,233,0.15)]">
+                  <span className="font-black text-slate-900">Ro</span>
+                  <span className="font-black text-sky-500">cita</span>
                 </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Código + Salud</span>
+                <div className="flex flex-col items-center gap-1">
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel 3</span>
+                   <span className="text-xs font-bold text-sky-600">Relieve & Profundidad</span>
+                </div>
               </div>
+
             </div>
-            <p className="mt-8 text-sm font-medium text-slate-400 italic">"Ro" de Robotismo, "cita" de Cercanía</p>
+            
+            <div className="mt-12 flex items-center justify-center gap-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+               <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-slate-900"></div> Robustez (Ro)</div>
+               <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+               <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-sky-500"></div> Cercanía (cita)</div>
+            </div>
           </div>
+
 
           
           <motion.h1 
