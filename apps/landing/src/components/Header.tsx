@@ -1,4 +1,4 @@
-﻿import { MessageSquare, Phone, Mail, Menu } from 'lucide-react';
+import { MessageSquare, Phone, Mail, Menu, UserCircle } from 'lucide-react';
 
 export default function Header() {
   return (
@@ -15,21 +15,21 @@ export default function Header() {
             Roc<span className='text-rocita-red'>i</span>ta
           </span>
         </div>
-        
+
         <nav className='hidden lg:flex items-center gap-10 text-sm font-bold text-zinc-600'>
           <a href='#servicios' className='hover:text-primary transition-colors'>Servicios</a>
           <a href='#beneficios' className='hover:text-primary transition-colors'>Beneficios</a>
           <a href='#integraciones' className='hover:text-primary transition-colors'>Integraciones</a>
           <div className='flex items-center gap-6 border-l border-zinc-200 pl-10'>
-             <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>
+             <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>   
               <MessageSquare size={18} className='group-hover:scale-110 transition-transform' />
               <span>WhatsApp</span>
             </div>
-            <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>
+            <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>    
               <Phone size={18} className='group-hover:scale-110 transition-transform' />
               <span>SMS</span>
             </div>
-            <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>
+            <div className='flex items-center gap-2 hover:text-primary transition-colors cursor-help group'>    
               <Mail size={18} className='group-hover:scale-110 transition-transform' />
               <span>Correo</span>
             </div>
@@ -37,6 +37,13 @@ export default function Header() {
         </nav>
 
         <div className='flex items-center gap-4'>
+          <a 
+            href="http://localhost:3001/login" 
+            className='hidden md:flex items-center gap-2 text-zinc-600 font-bold hover:text-primary transition-all px-4 py-2 rounded-lg'
+          >
+            <UserCircle size={20} />
+            Ingresar
+          </a>
           <button className='bg-zinc-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-zinc-800 transition-all shadow-md active:scale-95'>
             Agendar Demo
           </button>

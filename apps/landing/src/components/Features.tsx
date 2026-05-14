@@ -31,7 +31,7 @@ const cards = [
 
 export default function Features() {
   return (
-    <section id='servicios' className='py-40 px-6 bg-white'>
+    <section id='beneficios' className='py-40 px-6 bg-white'>
       <div className='max-w-7xl mx-auto'>
         <div className='flex flex-col md:flex-row items-end justify-between mb-24 gap-8'>
           <div className='max-w-2xl'>
@@ -43,7 +43,7 @@ export default function Features() {
               Beneficios Reales
             </motion.div>
             <h2 className='text-5xl md:text-7xl font-black tracking-tighter leading-[0.9]'>
-              Diseñado para la <br /><span className='text-primary'>salud moderna.</span>
+              Diseñado para una <br /><span className='text-primary'>salud eficiente.</span>
             </h2>
           </div>
           <p className='text-zinc-500 text-xl max-w-sm mb-2'>
