@@ -21,6 +21,42 @@ export default function Hero() {
             <span className="w-2 h-2 bg-rocita-red rounded-full animate-pulse"></span>
             Operativa en 100Digital
           </motion.div>
+
+          {/* SHOWROOM DE ESTILOS RO-CITA */}
+          <div className="mb-16 p-10 bg-white/50 backdrop-blur-xl rounded-[3rem] border border-blue-100 shadow-2xl shadow-sky-900/5 max-w-4xl mx-auto w-full">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-500 mb-10">Laboratorio de Identidad Visual</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
+              {/* Opción 1: El Contraste de Pesos */}
+              <div className="flex flex-col items-center gap-4 group cursor-pointer">
+                <div className="text-5xl transition-transform group-hover:scale-110 duration-500">
+                  <span className="font-black tracking-tighter text-slate-900">Ro</span>
+                  <span className="font-light tracking-wide text-slate-900">cita</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tech + Humano</span>
+              </div>
+
+              {/* Opción 2: El Salto de Color (Recomendada) */}
+              <div className="flex flex-col items-center gap-4 group cursor-pointer p-6 bg-sky-50 rounded-[2rem] border border-sky-100">
+                <div className="text-5xl transition-transform group-hover:scale-110 duration-500">
+                  <span className="font-extrabold tracking-tight text-slate-900">Ro</span>
+                  <span className="font-extrabold tracking-tight text-sky-500">cita</span>
+                </div>
+                <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">SaaS Moderno</span>
+              </div>
+
+              {/* Opción 3: Fusión de Tipografías */}
+              <div className="flex flex-col items-center gap-4 group cursor-pointer">
+                <div className="text-5xl transition-transform group-hover:scale-110 duration-500">
+                  <span className="font-mono font-bold tracking-tighter text-sky-600">Ro</span>
+                  <span className="font-sans font-medium text-sky-600">cita</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Código + Salud</span>
+              </div>
+            </div>
+            <p className="mt-8 text-sm font-medium text-slate-400 italic">"Ro" de Robotismo, "cita" de Cercanía</p>
+          </div>
+
           
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
