@@ -3,19 +3,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Check, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-const MESSAGES = [
-  { id: 1, sender: 'rocita', text: '¡Hola Julián! 🩺 Soy Ro-cita. Te recordamos tu cita odontológica mañana a las 10:00 AM. ¿Confirmas tu asistencia?', delay: 1000 },
+interface Message {
+  id: number;
+  sender: string;
+  text: string;
+  delay: number;
+}
+
+const MESSAGES: Message[] = [
+  { id: 1, sender: 'rocita', text: '¡Hola Julián! 🩺 Soy Rocita. Te recordamos tu cita odontológica mañana a las 10:00 AM. ¿Confirmas tu asistencia?', delay: 1000 },
   { id: 2, sender: 'user', text: '¡Hola! Sí, confirmo mi asistencia. Muchas gracias.', delay: 3000 },
   { id: 3, sender: 'rocita', text: '¡Excelente! ✅ Tu cita ha sido confirmada. Nos vemos mañana.', delay: 4500 }
 ];
 
 export default function WhatsappSimulator() {
-  const [visibleMessages, setVisibleMessages] = useState([]);
+  const [visibleMessages, setVisibleMessages] = useState<Message[]>([]);
   const [key, setKey] = useState(0);
 
   useEffect(() => {
     setVisibleMessages([]);
-    const timeouts = MESSAGES.map((msg, index) => {
+    const timeouts = MESSAGES.map((msg) => {
       return setTimeout(() => {
         setVisibleMessages(prev => [...prev, msg]);
       }, msg.delay);
@@ -32,16 +39,16 @@ export default function WhatsappSimulator() {
   }, [key]);
 
   return (
-    <div className="relative w-full max-w-[320px] aspect-[9/18] bg-zinc-900 rounded-[3rem] p-3 border-[6px] border-zinc-800 shadow-2xl overflow-hidden group">
+    <div className="relative w-full max-w-[320px] aspect-[9/18] bg-zinc-900 rounded-[3rem] p-3 border-[6px] border-zinc-800 shadow-2xl overflow-hidden group text-left">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-zinc-800 rounded-b-2xl z-20"></div>
       
       <div className="relative h-full w-full bg-[#E5DDD5] rounded-[2.2rem] overflow-hidden flex flex-col">
-        <div className="bg-sky-500 p-4 pt-8 flex items-center gap-3 text-white">
+        <div className="bg-[#075E54] p-4 pt-8 flex items-center gap-3 text-white">
           <div className="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center">
             <User size={18} className="text-sky-600" />
           </div>
-          <div>
-            <p className="text-xs font-bold leading-none">Ro-cita Assistant</p>
+          <div className="text-left">
+            <p className="text-xs font-bold leading-none">Rocita Assistant</p>
             <p className="text-[10px] opacity-80">en línea</p>
           </div>
         </div>
@@ -72,7 +79,7 @@ export default function WhatsappSimulator() {
 
         <div className="p-3 bg-zinc-100 flex items-center gap-2">
             <div className="flex-1 bg-white h-8 rounded-full"></div>
-            <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-full bg-[#128C7E] flex items-center justify-center text-white">
                 <MessageSquare size={14} />
             </div>
         </div>
