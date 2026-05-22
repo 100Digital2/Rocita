@@ -5,6 +5,7 @@ import { MessageSquare, Phone, Mail, Menu, X, UserCircle, ChevronRight } from 'l
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001/login';
 
   return (
     <header className='fixed top-0 z-50 w-full border-b border-white/20 bg-white/40 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4'>
@@ -47,7 +48,7 @@ export default function Header() {
         <div className='flex items-center gap-2 md:gap-4'>
           {/* Desktop "Ingresar al Portal" */}
           <a
-            href="http://localhost:3001/login"
+            href={dashboardUrl}
             className='hidden md:flex items-center gap-2 px-5 py-2.5 border-2 border-sky-500/30 hover:border-sky-500 bg-sky-500/5 hover:bg-sky-500 text-sky-600 hover:text-white font-black rounded-xl transition-all shadow-sm hover:shadow-lg hover:shadow-sky-500/10 active:scale-95 group text-sm'
           >
             <UserCircle size={18} className='text-sky-500 group-hover:text-white group-hover:scale-110 transition-all' />
@@ -129,7 +130,7 @@ export default function Header() {
               {/* Mobile CTA Buttons */}
               <div className='flex flex-col gap-3 mt-2 border-t border-zinc-100 pt-6'>
                 <a
-                  href="http://localhost:3001/login"
+                  href={dashboardUrl}
                   onClick={() => setIsMenuOpen(false)}
                   className='flex items-center justify-center gap-2 px-5 py-4 bg-sky-500 hover:bg-sky-600 text-white font-black rounded-2xl transition-all shadow-md active:scale-95 text-center text-base'
                 >
