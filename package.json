@@ -1,0 +1,7 @@
+{
+  "name": "rocita-root",
+  "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
