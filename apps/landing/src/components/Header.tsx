@@ -5,7 +5,7 @@ import { MessageSquare, Phone, Mail, Menu, X, UserCircle, ChevronRight } from 'l
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001/login';
+  const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://app.rocita.co/login';
 
   return (
     <header className='fixed top-0 z-50 w-full border-b border-white/20 bg-white/40 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4'>
