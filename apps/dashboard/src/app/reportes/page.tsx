@@ -78,11 +78,16 @@ export default function ReportesPage() {
     <div className='flex min-h-screen bg-[#E0F2FE] font-sans text-slate-900 overflow-hidden'>
       {/* Sidebar */}
       <aside className='w-72 bg-white border-r border-blue-100 p-8 flex flex-col gap-10 shadow-sm z-10'>
-        <div className='flex items-center gap-3 font-black text-2xl tracking-tighter text-sky-500'>
-          <div className='w-10 h-10 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-sky-500/30 rotate-3'>
-            R
-          </div>    
-          Rocita
+        <div className='flex items-center gap-3 font-black text-2xl tracking-tighter text-slate-900 group cursor-pointer'>
+          <div className='relative'>
+            <div className='w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-sky-500/20 group-hover:rotate-6 transition-transform'>
+              R
+            </div>
+            <div className='absolute -top-0.5 -right-0.5 w-3 h-3 bg-sky-500 rounded-full border-2 border-white animate-pulse'></div>
+          </div>
+          <span>
+            <span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>
+          </span>
         </div>
 
         <nav className='flex flex-col gap-2'>
@@ -98,12 +103,18 @@ export default function ReportesPage() {
             </div>
             <ChevronRight size={16} className='opacity-50' />
           </a>
-          <a href='#' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
+          <a href='/pacientes' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
             <User size={20} className='group-hover:scale-110 transition-transform' /> Pacientes
+          </a>
+          <a href='/notificaciones' className='flex items-center justify-between p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
+            <div className='flex items-center gap-3'>
+              <Bell size={20} className='group-hover:scale-110 transition-transform' /> Notificaciones
+            </div>
+            <span className='px-2 py-0.5 bg-sky-500 text-white text-[10px] font-black rounded-full shadow-md shadow-sky-500/10 group-hover:scale-110 transition-all'>3</span>
           </a>
           
           <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-6 mb-2 px-4'>Sistema</p>
-          <a href='#' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
+          <a href='/configuracion' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
             <Settings size={20} className='group-hover:scale-110 transition-transform' /> Configuración
           </a>
           

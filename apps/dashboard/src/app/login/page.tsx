@@ -43,15 +43,18 @@ export default function LoginPage() {
       >
         {/* Logo y Encabezado */}
         <div className="text-center mb-10">
-          <motion.div 
-            initial={{ scale: 0.8, rotate: -10 }}
-            animate={{ scale: 1, rotate: 3 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-20 h-20 bg-sky-500 rounded-[2.5rem] flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-sky-500/40 mx-auto mb-6"
-          >
-            R
-          </motion.div>
-          <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-2">Bienvenido a Rocita</h1>
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <motion.div 
+              initial={{ scale: 0.8, rotate: -10 }}
+              animate={{ scale: 1, rotate: 3 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="w-full h-full bg-sky-500 rounded-[2.2rem] flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-sky-500/40"
+            >
+              R
+            </motion.div>
+            <div className="absolute -top-1 -right-1 w-6 h-6 bg-sky-500 rounded-full border-4 border-[#E0F2FE] animate-pulse z-20"></div>
+          </div>
+          <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-2">Bienvenido a <span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span></h1>
           <p className="text-slate-500 font-bold tracking-tight">Gestión de Salud Eficiente</p>
         </div>
 

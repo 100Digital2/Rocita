@@ -34,6 +34,15 @@ export default function Dashboard() {
   const [isSending, setIsSending] = useState(false);
   const [sendProgress, setSendProgress] = useState(0);
 
+  // Estados de la Etapa 1: Previsualización de Datos de Excel y Pestañas
+  const [previewData, setPreviewData] = useState<{
+    pacientes: any[];
+    profesionales: any[];
+    citas: any[];
+  } | null>(null);
+  const [activePreviewTab, setActivePreviewTab] = useState<'pacientes' | 'profesionales' | 'citas'>('pacientes');
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+
   // Verificación de autenticación para la demo
   useEffect(() => {
     const auth = localStorage.getItem('rocita_auth');
@@ -80,12 +89,20 @@ export default function Dashboard() {
         citas: XLSX.utils.sheet_to_json(workbook.Sheets['Citas']).length,
       };
 
+      // Extracción de datos muestra (Etapa 1)
+      const samples = {
+        pacientes: XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']).slice(0, 3) as any[],
+        profesionales: XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']).slice(0, 3) as any[],
+        citas: XLSX.utils.sheet_to_json(workbook.Sheets['Citas']).slice(0, 3) as any[],
+      };
+
       setCounts(newCounts);
+      setPreviewData(samples);
       
       // Simular un poco de delay para el efecto visual de "procesando"
       setTimeout(() => {
         setIsUploading(false);
-        setStep(2);
+        setShowPreviewModal(true);
       }, 1500);
 
     } catch (err: any) {
@@ -119,17 +136,31 @@ export default function Dashboard() {
     fileInputRef.current?.click();
   };
 
+  const getDynamicPreview = (text: string) => {
+    if (!text) return '';
+    return text
+      .replace(/{nombre_paciente}/g, 'Carlos Humberto Pérez')
+      .replace(/{nombre_doctor}/g, 'Dra. Carolina Gómez')
+      .replace(/{fecha_cita}/g, 'Lunes 25 de Mayo a las 10:30 AM')
+      .replace(/{lugar}/g, 'Consultorio 402 (Torre Médica Central)');
+  };
+
   if (!isAuthenticated) return null;
 
   return (
     <div className='flex min-h-screen bg-[#E0F2FE] font-sans text-slate-900 overflow-hidden'>
       {/* Sidebar */}
       <aside className='w-72 bg-white border-r border-blue-100 p-8 flex flex-col gap-10 shadow-sm z-10'>
-        <div className='flex items-center gap-3 font-black text-2xl tracking-tighter text-sky-500'>
-          <div className='w-10 h-10 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-sky-500/30 rotate-3'>
-            R
-          </div>    
-          Rocita
+        <div className='flex items-center gap-3 font-black text-2xl tracking-tighter text-slate-900 group cursor-pointer'>
+          <div className='relative'>
+            <div className='w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-sky-500/20 group-hover:rotate-6 transition-transform'>
+              R
+            </div>
+            <div className='absolute -top-0.5 -right-0.5 w-3 h-3 bg-sky-500 rounded-full border-2 border-white animate-pulse'></div>
+          </div>
+          <span>
+            <span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>
+          </span>
         </div>
 
         <nav className='flex flex-col gap-2'>
@@ -143,15 +174,18 @@ export default function Dashboard() {
           <a href='/reportes' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
             <BarChart3 size={20} className='group-hover:scale-110 transition-transform' /> Reportes
           </a>
-          <a href='#' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
+          <a href='/pacientes' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
             <User size={20} className='group-hover:scale-110 transition-transform' /> Pacientes
           </a>
-          <a href='#' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
-            <Bell size={20} className='group-hover:scale-110 transition-transform' /> Notificaciones
+          <a href='/notificaciones' className='flex items-center justify-between p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
+            <div className='flex items-center gap-3'>
+              <Bell size={20} className='group-hover:scale-110 transition-transform' /> Notificaciones
+            </div>
+            <span className='px-2 py-0.5 bg-sky-500 text-white text-[10px] font-black rounded-full shadow-md shadow-sky-500/10 group-hover:scale-110 transition-all'>3</span>
           </a>
           
           <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-6 mb-2 px-4'>Sistema</p>
-          <a href='#' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
+          <a href='/configuracion' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
             <Settings size={20} className='group-hover:scale-110 transition-transform' /> Configuración
           </a>
           
@@ -326,7 +360,7 @@ export default function Dashboard() {
                           <button
                             key={v.id}
                             onClick={() => insertVariable(v.id)}
-                            className='flex items-center gap-2 px-5 py-3 bg-sky-50 text-sky-600 rounded-[1.25rem] text-sm font-black hover:bg-sky-500 hover:text-white transition-all shadow-sm'
+                            className='flex items-center gap-2 px-5 py-3 bg-sky-50 text-sky-600 rounded-[1.25rem] text-sm font-black hover:bg-sky-500 hover:text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-sm'
                           >
                             {v.icon} {v.label}
                           </button>
@@ -339,7 +373,7 @@ export default function Dashboard() {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder='Redacta tu mensaje de recordatorio aquí...'
-                        className='w-full h-80 p-8 bg-slate-50 border-2 border-transparent focus:border-sky-500 focus:bg-white rounded-[2.5rem] outline-none transition-all font-sans text-lg text-slate-800 leading-relaxed shadow-inner'
+                        className='w-full h-80 p-8 bg-slate-50 border-2 border-transparent focus:border-sky-500 focus:bg-white rounded-[2.5rem] outline-none transition-all duration-300 focus:ring-4 focus:ring-sky-500/20 font-sans text-lg text-slate-800 leading-relaxed shadow-inner'
                       />
                       <div className='absolute bottom-6 right-6 px-4 py-2 bg-white/80 backdrop-blur rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 border border-slate-100 shadow-sm'>
                         {message.length} caracteres
@@ -347,12 +381,12 @@ export default function Dashboard() {
                     </div>
 
                     <div className='flex items-center justify-between mt-10'>
-                      <button onClick={() => setStep(1)} className='px-8 py-4 text-slate-400 font-black hover:text-slate-800 transition-all'>
+                      <button onClick={() => setStep(1)} className='px-8 py-4 text-slate-400 font-black hover:text-slate-800 hover:scale-105 active:scale-95 transition-all duration-200'>
                         Atrás
                       </button>
                       <button
                         onClick={handleSend}
-                        className='bg-sky-500 text-white px-12 py-4 rounded-[1.5rem] font-black text-lg hover:scale-105 transition-all shadow-xl shadow-sky-500/30 flex items-center gap-3'
+                        className='bg-sky-500 text-white px-12 py-4 rounded-[1.5rem] font-black text-lg hover:scale-105 active:scale-95 hover:shadow-sky-500/40 transition-all duration-200 shadow-xl shadow-sky-500/30 flex items-center gap-3'
                       >
                         Programar Envío <Send size={20} />
                       </button>
@@ -373,8 +407,14 @@ export default function Dashboard() {
                             <p className='text-[8px] text-slate-500'>En línea</p>
                           </div>
                         </div>
-                        <div className='bg-slate-900 rounded-2xl rounded-tl-none p-4 text-[10px] leading-relaxed border border-slate-700/30 text-slate-300'>
-                          {message || 'Comienza a escribir para ver la previsualización...'}
+                        <div className='bg-slate-900 rounded-2xl rounded-tl-none p-4 text-xs leading-relaxed border border-slate-700/30 text-slate-300 shadow-md font-sans max-w-full overflow-hidden break-words'>
+                          {message ? (
+                            <div className='whitespace-pre-wrap'>{getDynamicPreview(message)}</div>
+                          ) : (
+                            <div className='text-slate-500 italic'>
+                              Hola <span className='text-sky-400 font-bold'>Carlos</span>, tu recordatorio aparecerá aquí redactado en tiempo real reemplazando tus variables dinámicamente...
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -455,6 +495,144 @@ export default function Dashboard() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Modal de Previsualización de Datos Excel (Etapa 1) */}
+      <AnimatePresence>
+        {showPreviewModal && previewData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 overflow-hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setShowPreviewModal(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+
+            {/* Content Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="relative bg-white/90 backdrop-blur-2xl border border-white rounded-[2.5rem] md:rounded-[3rem] shadow-2xl p-6 md:p-10 max-w-4xl w-full flex flex-col gap-6 max-h-[85vh] overflow-hidden z-10"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setShowPreviewModal(false);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+                className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Header */}
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 shadow-sm">
+                  <CheckCircle2 size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl md:text-2xl font-black tracking-tight text-slate-900">¡Validación Exitosa!</h3>
+                  <p className="text-xs md:text-sm font-semibold text-slate-500 mt-1">
+                    Hemos verificado tu archivo Excel. A continuación, tienes una muestra de los registros detectados en cada pestaña.
+                  </p>
+                </div>
+              </div>
+
+              {/* Tabs Navigation */}
+              <div className="flex items-center border-b border-slate-100 pb-2 gap-2">
+                {[
+                  { id: 'pacientes', label: 'Pacientes', count: counts.pacientes, icon: <User size={16} /> },
+                  { id: 'profesionales', label: 'Profesionales', count: counts.profesionales, icon: <Users size={16} /> },
+                  { id: 'citas', label: 'Citas', count: counts.citas, icon: <Calendar size={16} /> }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActivePreviewTab(tab.id as any)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${
+                      activePreviewTab === tab.id
+                        ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
+                        : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                    }`}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                      activePreviewTab === tab.id
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Data Table */}
+              <div className="flex-1 overflow-auto rounded-2xl border border-blue-50 bg-slate-50/50 p-2 custom-scrollbar">
+                {previewData[activePreviewTab] && previewData[activePreviewTab].length > 0 ? (
+                  <table className="w-full text-left text-xs md:text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-blue-100">
+                        {Object.keys(previewData[activePreviewTab][0]).map((header) => (
+                          <th key={header} className="p-3 font-black text-slate-400 uppercase tracking-widest text-[9px] md:text-[10px]">
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData[activePreviewTab].map((row, index) => (
+                        <tr key={index} className="border-b border-slate-100/50 last:border-0 hover:bg-white/40 transition-colors">
+                          {Object.values(row).map((val: any, cellIndex) => (
+                            <td key={cellIndex} className="p-3 text-slate-700 font-medium">
+                              {val !== undefined && val !== null ? String(val) : '-'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <p className="font-bold text-sm">No se encontraron registros de muestra en esta pestaña.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-between border-t border-slate-100 pt-6">
+                <button
+                  onClick={() => {
+                    setShowPreviewModal(false);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="px-6 py-3 border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-all text-xs md:text-sm active:scale-95"
+                >
+                  Volver a Cargar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPreviewModal(false);
+                    setStep(2);
+                  }}
+                  className="px-8 py-3 bg-sky-500 text-white font-black hover:bg-sky-600 rounded-xl shadow-lg shadow-sky-500/20 transition-all text-xs md:text-sm flex items-center gap-2 active:scale-95 group"
+                >
+                  Confirmar y Continuar
+                  <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
