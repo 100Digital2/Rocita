@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +28,7 @@ export default function LoginPage() {
 
     try {
       // Petición real al backend de NestJS
-      const response = await fetch('http://localhost:3000/auth/login', {
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +76,7 @@ export default function LoginPage() {
 
     try {
       // Petición real al backend de NestJS
-      const response = await fetch('http://localhost:3000/auth/register', {
+      const response = await fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ export default function LoginPage() {
         // Autologin
         setTimeout(async () => {
           try {
-            const loginRes = await fetch('http://localhost:3000/auth/login', {
+            const loginRes = await fetch(`${apiUrl}/auth/login`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
