@@ -1,18 +1,24 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Lock, Mail, ChevronRight, Activity, ShieldCheck, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Lock, Mail, ChevronRight, Activity, ShieldCheck, Eye, EyeOff, Sparkles, User, Building, HeartPulse } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [clinicName, setClinicName] = useState('');
+  const [role, setRole] = useState('doctor');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,10 +61,77 @@ export default function LoginPage() {
     }
   };
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      // Petición real al backend de NestJS
+      const response = await fetch('http://localhost:3000/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password, clinicName, role }),
+      });
+
+      if (response.ok) {
+        setSuccessMessage('¡Cuenta creada con éxito! Iniciando sesión...');
+        
+        // Autologin
+        setTimeout(async () => {
+          try {
+            const loginRes = await fetch('http://localhost:3000/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email, password }),
+            });
+            if (loginRes.ok) {
+              const loginData = await loginRes.json();
+              login(loginData.access_token, loginData.user);
+            } else {
+              setIsRegister(false);
+              setIsLoading(false);
+            }
+          } catch (loginErr) {
+            login('demo-jwt-token-offline-mode', { email, name, role });
+          }
+        }, 1500);
+        return;
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setError(errorData.message || 'Error al registrar la cuenta en el servidor.');
+        setIsLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('NestJS Backend desconectado. Activando Fallback Inteligente de la Demo...', err);
+      
+      // Fallback de Respaldo Offline
+      setTimeout(() => {
+        setSuccessMessage('¡Cuenta registrada exitosamente (Modo Demo Offline)!');
+        setTimeout(() => {
+          login('demo-jwt-token-offline-mode', { email, name, role });
+        }, 1500);
+      }, 1000);
+    }
+  };
+
   // WOW Factor UX: Relleno rápido para la demo de 100Digital
   const handleDemoFill = () => {
     setEmail('admin@rocita.ai');
     setPassword('rocita2026');
+    setIsRegister(false);
   };
 
   return (
@@ -74,7 +147,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-[490px] z-10"
+        className="w-full max-w-[520px] z-10"
       >
         {/* Logo y Encabezado */}
         <div className="text-center mb-8">
@@ -92,7 +165,7 @@ export default function LoginPage() {
             <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-[#F0F9FF] animate-pulse z-20"></div>
           </div>
           <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-2">
-            Bienvenido a <span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>
+            {isRegister ? 'Únete a ' : 'Bienvenido a '}<span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>
           </h1>
           <p className="text-slate-500 font-bold tracking-tight flex items-center justify-center gap-1.5 text-sm">
             <Sparkles size={14} className="text-sky-500" /> Inteligencia en Gestión Médica
@@ -100,7 +173,7 @@ export default function LoginPage() {
         </div>
 
         {/* Tarjeta de Login (Glassmorphism Premium) */}
-        <div className="bg-white/95 backdrop-blur-3xl border-2 border-white rounded-[3.5rem] p-10 shadow-[0_25px_60px_-15px_rgba(14,165,233,0.15)] relative overflow-hidden">
+        <div className="bg-white/95 backdrop-blur-3xl border-2 border-white rounded-[3.5rem] p-10 shadow-[0_25px_60px_-15px_rgba(14,165,233,0.15)] relative overflow-hidden transition-all duration-500">
           {/* Filo de luz superior */}
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/40 to-transparent"></div>
 
@@ -110,9 +183,74 @@ export default function LoginPage() {
             <span className="text-[9px] font-black uppercase tracking-widest text-emerald-700">Acceso Seguro</span>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5.5 relative z-10 mt-4">
+          <form onSubmit={isRegister ? handleRegister : handleLogin} className="space-y-4.5 relative z-10 mt-4">
+            
+            {/* Campos de Registro */}
+            <AnimatePresence initial={false} mode="popLayout">
+              {isRegister && (
+                <motion.div
+                  key="register-fields"
+                  initial={{ opacity: 0, height: 0, y: -10 }}
+                  animate={{ opacity: 1, height: 'auto', y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="space-y-4.5 overflow-hidden"
+                >
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Nombre Completo</label>
+                    <div className="relative group">
+                      <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Dr. Alejandro Ruiz"
+                        className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
+                        required={isRegister}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Nombre de la Clínica / Consultorio</label>
+                    <div className="relative group">
+                      <Building className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        value={clinicName}
+                        onChange={(e) => setClinicName(e.target.value)}
+                        placeholder="Clínica del Rosario / Consultorio Principal"
+                        className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
+                        required={isRegister}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Rol Clínico</label>
+                    <div className="relative group">
+                      <HeartPulse className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors z-10" size={18} />
+                      <select 
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-8 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5 appearance-none cursor-pointer relative"
+                        required={isRegister}
+                      >
+                        <option value="doctor">Médico / Especialista</option>
+                        <option value="assistant">Asistente Clínico</option>
+                        <option value="admin">Administrador del Centro</option>
+                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <ChevronRight className="rotate-90" size={16} />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 ml-2">Correo Institucional</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Correo Institucional</label>
               <div className="relative group">
                 <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
                 <input 
@@ -120,14 +258,14 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ejemplo@clinica.com"
-                  className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4.5 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
+                  className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 ml-2">Contraseña</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Contraseña</label>
               <div className="relative group">
                 <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
                 <input 
@@ -135,7 +273,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4.5 pl-14 pr-14 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
+                  className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-14 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
                   required
                 />
                 <button
@@ -148,6 +286,33 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Confirmar Contraseña en Registro */}
+            <AnimatePresence initial={false}>
+              {isRegister && (
+                <motion.div
+                  key="confirm-password"
+                  initial={{ opacity: 0, height: 0, y: -10 }}
+                  animate={{ opacity: 1, height: 'auto', y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Confirmar Contraseña</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
+                    <input 
+                      type={showPassword ? 'text' : 'password'} 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-14 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
+                      required={isRegister}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {error && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -155,6 +320,17 @@ export default function LoginPage() {
                 className="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs font-bold text-red-600 leading-relaxed shadow-sm"
               >
                 {error}
+              </motion.div>
+            )}
+
+            {successMessage && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-xs font-bold text-emerald-600 leading-relaxed shadow-sm flex items-center gap-2"
+              >
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
+                {successMessage}
               </motion.div>
             )}
 
@@ -170,11 +346,26 @@ export default function LoginPage() {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  Ingresar al Panel <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  {isRegister ? 'Registrar y Comenzar' : 'Ingresar al Panel'} <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </button>
           </form>
+
+          {/* Enlace para conmutar Login <-> Registro */}
+          <div className="text-center mt-6">
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegister(!isRegister);
+                setError('');
+                setSuccessMessage('');
+              }}
+              className="text-xs font-bold text-sky-600 hover:text-sky-700 transition-colors focus:outline-none"
+            >
+              {isRegister ? '¿Ya tienes una cuenta? Inicia sesión' : '¿No tienes una cuenta médica? Regístrate'}
+            </button>
+          </div>
 
           {/* 🌟 Caja de Acceso Rápido Demo (WOW Factor de UX) */}
           <div className="mt-6 p-4 bg-sky-50/50 border border-sky-100/50 rounded-3xl flex items-center justify-between gap-3">

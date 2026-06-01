@@ -1,4 +1,4 @@
-﻿# dependencies
+# dependencies
 node_modules
 **/node_modules
 .pnp
@@ -34,3 +34,13 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# NestJS build output
+dist/
+**/dist/
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+**/rocita.db

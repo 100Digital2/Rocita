@@ -12,6 +12,17 @@ export class AuthController {
     return this.authService.login(loginDto.email, loginDto.password);
   }
 
+  @Post('register')
+  async register(@Body() registerDto: Record<string, any>) {
+    return this.authService.register({
+      name: registerDto.name,
+      email: registerDto.email,
+      pass: registerDto.password,
+      clinicName: registerDto.clinicName,
+      role: registerDto.role,
+    });
+  }
+
   @UseGuards(AuthGuard)
   @Get('profile')
   getProfile(@Request() req) {
