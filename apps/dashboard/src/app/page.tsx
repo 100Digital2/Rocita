@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
+import { useAuth } from '../context/AuthContext';
 import {
   Upload,
   MessageSquare,
@@ -22,8 +23,68 @@ import {
   BarChart3
 } from 'lucide-react';
 
+
+const joinExcelSheets = (workbook: XLSX.WorkBook): any[] => {
+  const rawPatients = XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']) as any[];
+  const rawProfessionals = XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']) as any[];
+  const rawAppointments = XLSX.utils.sheet_to_json(workbook.Sheets['Citas']) as any[];
+
+  // Determine if it's the Demo style (keys like 'id', 'nombre', 'telefono')
+  // or the 50-patient style (keys like 'Nombre', 'Cedula', 'Telefono')
+  const hasIdKey = rawPatients.length > 0 && ('id' in rawPatients[0] || 'Id' in rawPatients[0]);
+
+  if (hasIdKey) {
+    return rawPatients.map((pat) => {
+      const patId = pat.id ?? pat.Id;
+      const apt = rawAppointments.find(
+        (a) => Number(a.id_paciente ?? a.PacienteId ?? a.paciente_id) === Number(patId)
+      );
+      const profId = apt ? (apt.id_profesional ?? apt.ProfesionalId ?? apt.profesional_id) : null;
+      const prof = profId ? rawProfessionals.find(
+        (p) => Number(p.id ?? p.Id) === Number(profId)
+      ) : null;
+
+      const dateStr = apt ? `${apt.fecha || apt.Fecha || ''} ${apt.hora || apt.Hora || ''}`.trim() : '';
+
+      return {
+        name: pat.nombre ?? pat.Nombre ?? pat.name ?? 'Paciente Desconocido',
+        phone: pat.telefono ?? pat.Telefono ?? pat.phone ?? '',
+        email: pat.email ?? pat.Email ?? pat.correo ?? pat.Correo ?? '',
+        status: apt ? (apt.estado ?? apt.Estado ?? 'Pendiente') : 'Pendiente',
+        doctor: prof ? (prof.nombre ?? prof.Nombre) : 'Sin asignar',
+        specialty: prof ? (prof.especialidad ?? prof.Especialidad) : 'Consulta General',
+        nextAppointment: dateStr || 'Próximamente'
+      };
+    });
+  } else {
+    return rawPatients.map((pat) => {
+      // Find appointment by matching Patient name (ignoring casing and extra spaces)
+      const patName = (pat.Nombre ?? pat.nombre ?? pat.name ?? '').toString().trim().toLowerCase();
+      const apt = rawAppointments.find(
+        (a) => (a.Paciente ?? a.paciente ?? '').toString().trim().toLowerCase() === patName
+      );
+      
+      const docName = apt ? (apt.Doctor ?? apt.doctor ?? apt.Médico ?? apt.medico) : null;
+      const prof = docName ? rawProfessionals.find(
+        (p) => (p.Nombre ?? p.nombre ?? '').toString().trim().toLowerCase() === docName.toString().trim().toLowerCase()
+      ) : null;
+
+      return {
+        name: pat.Nombre ?? pat.nombre ?? pat.name ?? 'Paciente Desconocido',
+        phone: pat.Telefono ?? pat.telefono ?? pat.phone ?? '',
+        email: pat.Correo ?? pat.correo ?? pat.email ?? pat.Email ?? '',
+        status: apt ? (apt.estado ?? apt.Estado ?? 'Pendiente') : 'Pendiente',
+        doctor: docName ?? 'Sin asignar',
+        specialty: prof ? (prof.Especialidad ?? prof.especialidad) : 'Consulta General',
+        nextAppointment: apt ? (apt['Fecha Cita'] ?? apt.fecha_cita ?? apt.Fecha ?? '') : 'Próximamente'
+      };
+    });
+  }
+};
+
 export default function Dashboard() {
   const router = useRouter();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const [message, setMessage] = useState('');
@@ -33,6 +94,8 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sendProgress, setSendProgress] = useState(0);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  const [fullPatientsList, setFullPatientsList] = useState<any[]>([]);
 
   // Estados de la Etapa 1: Previsualización de Datos de Excel y Pestañas
   const [previewData, setPreviewData] = useState<{
@@ -83,19 +146,22 @@ export default function Dashboard() {
       }
 
       // Conteo de registros (restando encabezado)
+      const parsedPatients = XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']) as any[];
       const newCounts = {
-        pacientes: XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']).length,
+        pacientes: parsedPatients.length,
         profesionales: XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']).length,
         citas: XLSX.utils.sheet_to_json(workbook.Sheets['Citas']).length,
       };
 
       // Extracción de datos muestra (Etapa 1)
       const samples = {
-        pacientes: XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']).slice(0, 3) as any[],
+        pacientes: parsedPatients.slice(0, 3),
         profesionales: XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']).slice(0, 3) as any[],
         citas: XLSX.utils.sheet_to_json(workbook.Sheets['Citas']).slice(0, 3) as any[],
       };
 
+      const joined = joinExcelSheets(workbook);
+      setFullPatientsList(joined);
       setCounts(newCounts);
       setPreviewData(samples);
       
@@ -210,7 +276,7 @@ export default function Dashboard() {
         <header className='h-24 border-b border-blue-100 bg-white/50 backdrop-blur-md px-12 flex items-center justify-between shrink-0'>
           <div>
             <h1 className='text-2xl font-black tracking-tight'>Panel de Control</h1>
-            <p className='text-xs font-bold text-slate-400 uppercase tracking-widest'>Salud Eficiente</p>
+            <p className='text-xs font-bold text-slate-400 uppercase tracking-widest'>{user?.clinicName || 'Salud Eficiente'}</p>
           </div>
           
           <div className='flex items-center gap-6'>
@@ -223,7 +289,7 @@ export default function Dashboard() {
               />
             </div>
             <div className='w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center font-bold text-slate-600'>
-              JJ
+              {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'JJ'}
             </div>
           </div>
         </header>
@@ -619,8 +685,26 @@ export default function Dashboard() {
                   Volver a Cargar
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setShowPreviewModal(false);
+                    // Intentamos persistir en base de datos real NestJS + SQLite
+                    try {
+                      const response = await fetch(`${apiUrl}/patients/bulk`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(fullPatientsList),
+                      });
+                      if (response.ok) {
+                        const data = await response.json();
+                        console.log('Pacientes guardados con éxito en SQLite:', data);
+                      } else {
+                        console.error('Error al guardar pacientes en el backend');
+                      }
+                    } catch (err) {
+                      console.warn('Backend desconectado. Pacientes cargados en modo Demo local.', err);
+                    }
                     setStep(2);
                   }}
                   className="px-8 py-3 bg-sky-500 text-white font-black hover:bg-sky-600 rounded-xl shadow-lg shadow-sky-500/20 transition-all text-xs md:text-sm flex items-center gap-2 active:scale-95 group"

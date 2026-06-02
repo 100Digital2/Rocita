@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import {
   User,
   LayoutDashboard,
@@ -56,6 +57,7 @@ interface Patient {
 
 export default function PacientesPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'Todos' | 'Confirmado' | 'Pendiente' | 'Cancelado'>('Todos');
@@ -162,13 +164,45 @@ export default function PacientesPage() {
     }
   ]);
 
-  // Auth Protection Check
+  // Auth Protection Check & Fetch Patients from Backend
   useEffect(() => {
     const auth = localStorage.getItem('rocita_auth');
     if (!auth) {
       router.push('/login');
     } else {
       setIsAuthenticated(true);
+      
+      // Intentar cargar pacientes de la base de datos real SQLite de NestJS
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      fetch(`${apiUrl}/patients`)
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error('Error al conectar');
+        })
+        .then((data) => {
+          if (data && data.length > 0) {
+            // Mapeamos los datos de la base de datos a la interfaz de la página
+            const mappedPatients = data.map((p: any) => ({
+              id: `pat-${p.id}`,
+              name: p.name,
+              age: p.age || 30,
+              phone: p.phone || '',
+              email: p.email || '',
+              status: p.status || 'Pendiente',
+              specialty: p.specialty || 'Consulta General',
+              doctor: p.doctor || 'Dr. Alejandro Restrepo',
+              nextAppointment: p.nextAppointment || 'Próximamente',
+              history: [
+                { date: 'Hoy', specialty: p.specialty || 'Consulta General', doctor: p.doctor || 'Dr. Alejandro Restrepo', status: p.status || 'Pendiente' }
+              ],
+              chatHistory: []
+            }));
+            setPatients(mappedPatients);
+          }
+        })
+        .catch((err) => {
+          console.warn('Backend desconectado o sin registros en SQLite. Usando pacientes estáticos de la demo.', err);
+        });
     }
   }, [router]);
 
@@ -394,7 +428,7 @@ export default function PacientesPage() {
               />
             </div>
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center font-bold text-slate-600">
-              JJ
+              {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'JJ'}
             </div>
           </div>
         </header>

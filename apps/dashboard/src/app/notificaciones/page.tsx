@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import {
   Bell,
   LayoutDashboard,
@@ -44,6 +45,7 @@ interface NotificationItem {
 
 export default function NotificacionesPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [filter, setFilter] = useState<'todas' | 'confirmacion' | 'cancelacion' | 'fallo'>('todas');
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
@@ -244,7 +246,7 @@ export default function NotificacionesPage() {
               />
             </div>
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center font-bold text-slate-600">
-              JJ
+              {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'JJ'}
             </div>
           </div>
         </header>

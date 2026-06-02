@@ -4,6 +4,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/user.entity';
+import { Patient } from './patients/patient.entity';
+import { PatientsModule } from './patients/patients.module';
 
 @Module({
   imports: [
@@ -11,10 +13,11 @@ import { User } from './auth/user.entity';
       type: 'sqljs',
       autoSave: true,
       location: 'rocita.db',
-      entities: [User],
+      entities: [User, Patient],
       synchronize: true,
     }),
     AuthModule,
+    PatientsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import {
   Settings,
   LayoutDashboard,
@@ -38,6 +39,7 @@ interface Toast {
 
 export default function ConfiguracionPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<'ia' | 'canales' | 'plantillas' | 'perfil'>('ia');
   
@@ -101,13 +103,26 @@ export default function ConfiguracionPage() {
       router.push('/login');
     } else {
       setIsAuthenticated(true);
-      // Load saved configurations if any
+      
+      // Load saved configurations or fallback to user details
       const savedClinic = localStorage.getItem('rocita_clinic_name');
-      if (savedClinic) setClinicName(savedClinic);
+      if (savedClinic) {
+        setClinicName(savedClinic);
+      } else if (user?.clinicName) {
+        setClinicName(user.clinicName);
+      }
+
+      const savedEmail = localStorage.getItem('rocita_clinic_email');
+      if (savedEmail) {
+        setClinicEmail(savedEmail);
+      } else if (user?.email) {
+        setClinicEmail(user.email);
+      }
+
       const savedTone = localStorage.getItem('rocita_ai_tone');
       if (savedTone) setAiTone(savedTone as any);
     }
-  }, [router]);
+  }, [router, user]);
 
   const showToastNotification = (message: string, type: 'success' | 'info' | 'warning' = 'success') => {
     setToast({ show: true, message, type });
@@ -123,6 +138,7 @@ export default function ConfiguracionPage() {
 
   const handleSaveSettings = () => {
     localStorage.setItem('rocita_clinic_name', clinicName);
+    localStorage.setItem('rocita_clinic_email', clinicEmail);
     localStorage.setItem('rocita_ai_tone', aiTone);
     showToastNotification('Configuración guardada exitosamente en el sistema.');
   };
@@ -245,7 +261,7 @@ export default function ConfiguracionPage() {
               Guardar Cambios
             </button>
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center font-bold text-slate-600">
-              JJ
+              {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'JJ'}
             </div>
           </div>
         </header>
