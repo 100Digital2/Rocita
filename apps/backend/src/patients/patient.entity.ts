@@ -11,6 +11,15 @@ export class Patient {
   @Column({ nullable: true })
   age: number;
 
+  @Column({ nullable: true, default: 'CC' })
+  documentType: string;
+
+  @Column({ nullable: true })
+  documentNumber: string;
+
+  @Column({ nullable: true })
+  gender: string;
+
   @Column()
   phone: string;
 
@@ -25,6 +34,12 @@ export class Patient {
 
   @Column({ nullable: true })
   doctor: string;
+
+  @Column({ nullable: true })
+  doctorEmail: string;
+
+  @Column({ nullable: true })
+  doctorPhone: string;
 
   @Column({ nullable: true })
   nextAppointment: string;

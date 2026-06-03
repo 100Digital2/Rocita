@@ -46,35 +46,55 @@ const joinExcelSheets = (workbook: XLSX.WorkBook): any[] => {
 
       const dateStr = apt ? `${apt.fecha || apt.Fecha || ''} ${apt.hora || apt.Hora || ''}`.trim() : '';
 
+      const profEmail = prof ? (prof.correo ?? prof.Correo ?? prof.email ?? prof.Email ?? '') : '';
+      const profPhone = prof ? (prof.celular ?? prof.Celular ?? prof.telefono ?? prof.Telefono ?? prof.phone ?? prof.Phone ?? '') : '';
+
       return {
         name: pat.nombre ?? pat.Nombre ?? pat.name ?? 'Paciente Desconocido',
         phone: pat.telefono ?? pat.Telefono ?? pat.phone ?? '',
         email: pat.email ?? pat.Email ?? pat.correo ?? pat.Correo ?? '',
+        documentType: pat.documentType ?? pat.tipo_documento ?? pat.tipoDocumento ?? pat['Tipo Documento'] ?? pat['tipo documento'] ?? pat.tipo ?? pat.Tipo ?? 'CC',
+        documentNumber: patId ? String(patId) : '',
+        gender: pat.gender ?? pat.sexo ?? pat.Sexo ?? pat.genero ?? pat.Genero ?? pat.Género ?? '',
         status: apt ? (apt.estado ?? apt.Estado ?? 'Pendiente') : 'Pendiente',
         doctor: prof ? (prof.nombre ?? prof.Nombre) : 'Sin asignar',
+        doctorEmail: profEmail,
+        doctorPhone: profPhone,
         specialty: prof ? (prof.especialidad ?? prof.Especialidad) : 'Consulta General',
         nextAppointment: dateStr || 'Próximamente'
       };
     });
   } else {
     return rawPatients.map((pat) => {
-      // Find appointment by matching Patient name (ignoring casing and extra spaces)
+      // Find patient document/ID:
+      const patDoc = (pat.Documento ?? pat.documento ?? pat.Identificacion ?? pat.identificacion ?? pat.Cedula ?? pat.cedula ?? pat.id ?? pat.Id ?? '').toString().trim();
       const patName = (pat.Nombre ?? pat.nombre ?? pat.name ?? '').toString().trim().toLowerCase();
-      const apt = rawAppointments.find(
-        (a) => (a.Paciente ?? a.paciente ?? '').toString().trim().toLowerCase() === patName
-      );
+      
+      const apt = rawAppointments.find((a) => {
+        const aptDoc = (a.Documento ?? a.documento ?? a['Documento Paciente'] ?? a['documento_paciente'] ?? a.Identificacion ?? a.identificacion ?? a['Identificacion Paciente'] ?? a['identificacion_paciente'] ?? a.Cedula ?? a.cedula ?? a['Cedula Paciente'] ?? a['Cédula Paciente'] ?? a.id_paciente ?? a.paciente_id ?? a.Paciente ?? a.paciente ?? '').toString().trim().toLowerCase();
+        if (patDoc && aptDoc === patDoc.toLowerCase()) return true;
+        return aptDoc === patName;
+      });
       
       const docName = apt ? (apt.Doctor ?? apt.doctor ?? apt.Médico ?? apt.medico) : null;
       const prof = docName ? rawProfessionals.find(
         (p) => (p.Nombre ?? p.nombre ?? '').toString().trim().toLowerCase() === docName.toString().trim().toLowerCase()
       ) : null;
 
+      const profEmail = prof ? (prof.correo ?? prof.Correo ?? prof.email ?? prof.Email ?? '') : '';
+      const profPhone = prof ? (prof.celular ?? prof.Celular ?? prof.telefono ?? prof.Telefono ?? prof.phone ?? prof.Phone ?? '') : '';
+
       return {
         name: pat.Nombre ?? pat.nombre ?? pat.name ?? 'Paciente Desconocido',
         phone: pat.Telefono ?? pat.telefono ?? pat.phone ?? '',
         email: pat.Correo ?? pat.correo ?? pat.email ?? pat.Email ?? '',
+        documentType: pat['Tipo Documento'] ?? pat['tipo_documento'] ?? pat['Tipo de Documento'] ?? pat['Tipo'] ?? pat.documentType ?? pat.tipoDocumento ?? pat.tipo ?? pat.Tipo ?? 'CC',
+        documentNumber: patDoc,
+        gender: pat.Sexo ?? pat.sexo ?? pat.gender ?? pat.Gender ?? pat.Genero ?? pat.genero ?? pat.Género ?? '',
         status: apt ? (apt.estado ?? apt.Estado ?? 'Pendiente') : 'Pendiente',
         doctor: docName ?? 'Sin asignar',
+        doctorEmail: profEmail,
+        doctorPhone: profPhone,
         specialty: prof ? (prof.Especialidad ?? prof.especialidad) : 'Consulta General',
         nextAppointment: apt ? (apt['Fecha Cita'] ?? apt.fecha_cita ?? apt.Fecha ?? '') : 'Próximamente'
       };

@@ -45,11 +45,16 @@ interface Patient {
   id: string;
   name: string;
   age: number;
+  documentType?: string;
+  documentNumber?: string;
+  gender?: string;
   phone: string;
   email: string;
   status: 'Confirmado' | 'Pendiente' | 'Cancelado';
   specialty: string;
   doctor: string;
+  doctorEmail?: string;
+  doctorPhone?: string;
   nextAppointment: string;
   history: AppointmentHistory[];
   chatHistory: ChatMessage[];
@@ -75,6 +80,8 @@ export default function PacientesPage() {
       id: 'pat-1',
       name: 'Carlos Humberto Pérez',
       age: 45,
+      documentType: 'CC',
+      gender: 'M',
       phone: '+57 310 123 4567',
       email: 'carlos.perez@email.com',
       status: 'Confirmado',
@@ -95,6 +102,8 @@ export default function PacientesPage() {
       id: 'pat-2',
       name: 'Laura Ruiz',
       age: 29,
+      documentType: 'CC',
+      gender: 'F',
       phone: '+57 315 987 6543',
       email: 'laura.ruiz@email.com',
       status: 'Cancelado',
@@ -117,6 +126,8 @@ export default function PacientesPage() {
       id: 'pat-3',
       name: 'Mateo Sánchez',
       age: 19,
+      documentType: 'TI',
+      gender: 'M',
       phone: '+57 312 456 7890',
       email: 'mateo.sanchez@email.com',
       status: 'Pendiente',
@@ -132,6 +143,8 @@ export default function PacientesPage() {
       id: 'pat-4',
       name: 'Martha Lucía Gómez',
       age: 38,
+      documentType: 'CC',
+      gender: 'F',
       phone: '+57 320 654 3210',
       email: 'martha.gomez@email.com',
       status: 'Confirmado',
@@ -151,6 +164,8 @@ export default function PacientesPage() {
       id: 'pat-5',
       name: 'Sofía Vergara',
       age: 52,
+      documentType: 'CC',
+      gender: 'F',
       phone: '+57 301 222 3333',
       email: 'sofia.vergara@email.com',
       status: 'Pendiente',
@@ -186,11 +201,16 @@ export default function PacientesPage() {
               id: `pat-${p.id}`,
               name: p.name,
               age: p.age || 30,
+              documentType: p.documentType || 'CC',
+              documentNumber: p.documentNumber || '',
+              gender: p.gender || '',
               phone: p.phone || '',
               email: p.email || '',
               status: p.status || 'Pendiente',
               specialty: p.specialty || 'Consulta General',
               doctor: p.doctor || 'Dr. Alejandro Restrepo',
+              doctorEmail: p.doctorEmail || '',
+              doctorPhone: p.doctorPhone || '',
               nextAppointment: p.nextAppointment || 'Próximamente',
               history: [
                 { date: 'Hoy', specialty: p.specialty || 'Consulta General', doctor: p.doctor || 'Dr. Alejandro Restrepo', status: p.status || 'Pendiente' }
@@ -555,7 +575,9 @@ export default function PacientesPage() {
                               </div>
                               <div>
                                 <h4 className="font-extrabold text-slate-900 group-hover:text-sky-600 transition-colors">{patient.name}</h4>
-                                <span className="text-xs text-slate-400 font-bold">{patient.age} años</span>
+                                <span className="text-xs text-slate-400 font-bold">
+                                  {patient.age} años • {patient.documentType || 'CC'} {patient.gender ? `• ${patient.gender}` : ''}
+                                </span>
                               </div>
                             </div>
                           </td>
@@ -680,7 +702,9 @@ export default function PacientesPage() {
                     </div>
                     <div className="space-y-1">
                       <h4 className="text-xl font-black leading-tight">{selectedPatient.name}</h4>
-                      <p className="text-xs font-bold text-sky-100">{selectedPatient.age} años • Paciente Registrado</p>
+                      <p className="text-xs font-bold text-sky-100">
+                        {selectedPatient.age} años • {selectedPatient.documentType || 'CC'} • {selectedPatient.gender === 'M' || selectedPatient.gender === 'm' ? 'Masculino' : selectedPatient.gender === 'F' || selectedPatient.gender === 'f' ? 'Femenino' : selectedPatient.gender || 'No especificado'}
+                      </p>
                       
                       <div className="pt-2 flex flex-wrap gap-2">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black text-white border border-white/10">
@@ -708,6 +732,12 @@ export default function PacientesPage() {
                     <div>
                       <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Médico Tratante</span>
                       <p className="text-xs font-black text-slate-800">{selectedPatient.doctor}</p>
+                      {selectedPatient.doctorPhone && (
+                        <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Cel: {selectedPatient.doctorPhone}</span>
+                      )}
+                      {selectedPatient.doctorEmail && (
+                        <span className="text-[10px] text-slate-400 font-bold block">Mail: {selectedPatient.doctorEmail}</span>
+                      )}
                     </div>
                     <div className="col-span-2">
                       <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Fecha Programada</span>

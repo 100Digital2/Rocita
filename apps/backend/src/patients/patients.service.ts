@@ -29,11 +29,16 @@ export class PatientsService {
       return this.patientRepository.create({
         name: data.name || data['Nombre'] || data['nombre'] || 'Paciente Desconocido',
         age: Number(data.age || data['Edad'] || data['edad']) || 0,
+        documentType: data.documentType || data['Tipo Documento'] || data['tipo_documento'] || data['Tipo de Documento'] || data['Tipo'] || data['tipo'] || 'CC',
+        documentNumber: data.documentNumber || data['Cedula'] || data['cedula'] || data['Cédula'] || data['Documento'] || data['documento'] || data['Identificacion'] || data['identificacion'] || data['Nro Documento'] || data['nro_documento'] || '',
+        gender: data.gender || data['Sexo'] || data['sexo'] || data['Género'] || data['genero'] || '',
         phone: data.phone || data['Telefono'] || data['telefono'] || data['Teléfono'] || data['Celular'] || '',
         email: data.email || data['Correo'] || data['correo'] || data['Email'] || data['email'] || '',
         status: data.status || data['Estado'] || data['estado'] || 'Pendiente',
         specialty: data.specialty || data['Especialidad'] || data['especialidad'] || '',
         doctor: data.doctor || data['Doctor'] || data['doctor'] || data['Médico'] || '',
+        doctorEmail: data.doctorEmail || data['doctor_email'] || data['doctorEmail'] || data['Correo Doctor'] || data['Correo Profesional'] || '',
+        doctorPhone: data.doctorPhone || data['doctor_phone'] || data['doctorPhone'] || data['Celular Doctor'] || data['Celular Profesional'] || data['Telefono Doctor'] || '',
         nextAppointment: data.nextAppointment || data['Fecha Cita'] || data['fecha_cita'] || data['Cita'] || '',
       });
     });
