@@ -22,6 +22,7 @@ import {
   AlertCircle,
   BarChart3
 } from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
 
 
 const joinExcelSheets = (workbook: XLSX.WorkBook): any[] => {
@@ -234,91 +235,25 @@ export default function Dashboard() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className='flex min-h-screen bg-[#E0F2FE] font-sans text-slate-900 overflow-hidden'>
-      {/* Sidebar */}
-      <aside className='w-72 bg-white border-r border-blue-100 p-8 flex flex-col gap-10 shadow-sm z-10'>
-        <div className='flex items-center gap-3 font-black text-2xl tracking-tighter text-slate-900 group cursor-pointer'>
-          <div className='relative'>
-            <div className='w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-sky-500/20 group-hover:rotate-6 transition-transform'>
-              R
-            </div>
-            <div className='absolute -top-0.5 -right-0.5 w-3 h-3 bg-sky-500 rounded-full border-2 border-white animate-pulse'></div>
-          </div>
-          <span>
-            <span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>
-          </span>
+    <DashboardLayout
+      activeTab="campanas"
+      title="Panel de Control"
+      subtitle={user?.clinicName || 'Salud Eficiente'}
+      headerExtra={
+        <div className='relative hidden md:block'>
+          <Search className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400' size={18} />
+          <input 
+            type="text" 
+            placeholder="Buscar paciente..." 
+            className='bg-white border border-blue-100 rounded-full py-2.5 pl-12 pr-6 text-sm focus:ring-2 focus:ring-sky-500 outline-none w-64 transition-all'
+          />
         </div>
-
-        <nav className='flex flex-col gap-2'>
-          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 px-4'>Principal</p>
-          <a href='/' className='flex items-center justify-between group gap-3 p-4 bg-sky-500 text-white rounded-[1.5rem] font-bold shadow-xl shadow-sky-500/20 transition-all'>    
-            <div className='flex items-center gap-3'>
-              <LayoutDashboard size={20} /> Campañas
-            </div>
-            <ChevronRight size={16} className='opacity-50' />
-          </a>
-          <a href='/reportes' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
-            <BarChart3 size={20} className='group-hover:scale-110 transition-transform' /> Reportes
-          </a>
-          <a href='/pacientes' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
-            <User size={20} className='group-hover:scale-110 transition-transform' /> Pacientes
-          </a>
-          <a href='/notificaciones' className='flex items-center justify-between p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
-            <div className='flex items-center gap-3'>
-              <Bell size={20} className='group-hover:scale-110 transition-transform' /> Notificaciones
-            </div>
-            <span className='px-2 py-0.5 bg-sky-500 text-white text-[10px] font-black rounded-full shadow-md shadow-sky-500/10 group-hover:scale-110 transition-all'>3</span>
-          </a>
-          
-          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-6 mb-2 px-4'>Sistema</p>
-          <a href='/configuracion' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
-            <Settings size={20} className='group-hover:scale-110 transition-transform' /> Configuración
-          </a>
-          
-          <button 
-            onClick={handleLogout}
-            className='flex items-center gap-3 p-4 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-[1.5rem] font-bold transition-all group mt-2'
-          >
-            <LogOut size={20} className='group-hover:scale-110 transition-transform' /> Cerrar Sesión
-          </button>
-        </nav>
-
-        <div className='mt-auto bg-sky-50 rounded-[2rem] p-6 relative overflow-hidden group'>
-          <div className='absolute -right-4 -top-4 w-20 h-20 bg-sky-500/5 rounded-full blur-2xl group-hover:bg-sky-500/10 transition-all'></div>
-          <p className='text-xs font-bold text-sky-600 mb-1'>Plan Pro</p>
-          <p className='text-xs text-sky-800/60 leading-relaxed font-medium'>Tu institución está operando al 100% de eficiencia.</p>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className='flex-1 flex flex-col h-screen overflow-hidden'>
-        {/* Navbar */}
-        <header className='h-24 border-b border-blue-100 bg-white/50 backdrop-blur-md px-12 flex items-center justify-between shrink-0'>
-          <div>
-            <h1 className='text-2xl font-black tracking-tight'>Panel de Control</h1>
-            <p className='text-xs font-bold text-slate-400 uppercase tracking-widest'>{user?.clinicName || 'Salud Eficiente'}</p>
-          </div>
-          
-          <div className='flex items-center gap-6'>
-            <div className='relative hidden md:block'>
-              <Search className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400' size={18} />
-              <input 
-                type="text" 
-                placeholder="Buscar paciente..." 
-                className='bg-white border border-blue-100 rounded-full py-2.5 pl-12 pr-6 text-sm focus:ring-2 focus:ring-sky-500 outline-none w-64 transition-all'
-              />
-            </div>
-            <div className='w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center font-bold text-slate-600'>
-              {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'JJ'}
-            </div>
-          </div>
-        </header>
-
-        <div className='flex-1 overflow-y-auto p-12'>
+      }
+    >
           {/* Steps Progress */}
-          <div className='flex items-center justify-center gap-4 mb-16'>
+          <div className='flex items-center justify-center gap-2 md:gap-4 mb-8 md:mb-16'>
             {[1, 2, 3].map((s) => (
-              <div key={s} className='flex items-center gap-4'>
+              <div key={s} className='flex items-center gap-2 md:gap-4'>
                 <motion.div 
                   initial={false}
                   animate={{ 
@@ -326,12 +261,12 @@ export default function Dashboard() {
                     color: step >= s ? '#fff' : '#94a3b8',
                     scale: step === s ? 1.1 : 1
                   }}
-                  className={`w-12 h-12 rounded-[1.25rem] flex items-center justify-center font-black shadow-lg shadow-sky-500/10 border ${step >= s ? 'border-sky-500' : 'border-slate-200'}`}
+                  className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-[1.25rem] flex items-center justify-center font-black shadow-lg shadow-sky-500/10 border text-sm md:text-base ${step >= s ? 'border-sky-500' : 'border-slate-200'}`}
                 >
-                  {step > s ? <CheckCircle2 size={24} /> : s}
+                  {step > s ? <CheckCircle2 size={20} className="md:w-6 md:h-6" /> : s}
                 </motion.div>
                 {s < 3 && (
-                  <div className='w-24 h-1 bg-slate-200 rounded-full overflow-hidden'>
+                  <div className='w-12 sm:w-20 md:w-24 h-1 bg-slate-200 rounded-full overflow-hidden'>
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: step > s ? '100%' : '0%' }}
@@ -353,19 +288,19 @@ export default function Dashboard() {
               className='max-w-5xl mx-auto'
             >
               {step === 1 && (
-                <div className='bg-white border border-blue-100 rounded-[3.5rem] p-16 shadow-2xl shadow-sky-900/5 relative overflow-hidden'>
+                <div className='bg-white border border-blue-100 rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-16 shadow-2xl shadow-sky-900/5 relative overflow-hidden'>
                   <div className='absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full -mr-32 -mt-32 blur-3xl'></div>
                   
                   <div className='relative z-10'>
-                    <div className='flex items-start justify-between mb-12'>
+                    <div className='flex items-start justify-between mb-8 md:mb-12'>
                       <div>
-                        <h2 className='text-4xl font-black tracking-tight mb-4 text-slate-900'>Carga de Datos</h2>
-                        <p className='text-slate-500 text-lg max-w-md font-medium'>
+                        <h2 className='text-2xl md:text-4xl font-black tracking-tight mb-2 md:mb-4 text-slate-900'>Carga de Datos</h2>
+                        <p className='text-slate-500 text-sm md:text-lg max-w-md font-medium'>
                           Sube tu archivo Excel para iniciar la campaña de recordatorios.
                         </p>
                       </div>
-                      <div className='w-20 h-20 bg-sky-50 rounded-[2rem] flex items-center justify-center text-sky-500'>
-                        <FileSpreadsheet size={32} />
+                      <div className='w-14 h-14 md:w-20 md:h-20 bg-sky-50 rounded-2xl md:rounded-[2rem] flex items-center justify-center text-sky-500 shrink-0'>
+                        <FileSpreadsheet className="w-6 h-6 md:w-8 md:h-8" />
                       </div>
                     </div>
 
@@ -379,20 +314,20 @@ export default function Dashboard() {
 
                     <div 
                       onClick={triggerFileUpload}
-                      className={`group w-full border-4 border-dashed rounded-[3rem] p-20 flex flex-col items-center justify-center transition-all cursor-pointer ${isUploading ? 'border-sky-500 bg-sky-50' : 'border-sky-50 hover:border-sky-500 hover:bg-sky-50/50 bg-slate-50/50'}`}
+                      className={`group w-full border-4 border-dashed rounded-[2rem] md:rounded-[3rem] p-8 md:p-20 flex flex-col items-center justify-center transition-all cursor-pointer ${isUploading ? 'border-sky-500 bg-sky-50' : 'border-sky-50 hover:border-sky-500 hover:bg-sky-50/50 bg-slate-50/50'}`}
                     >
                       {isUploading ? (
                         <div className='flex flex-col items-center'>
-                          <div className='w-16 h-16 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-6'></div>
-                          <p className='text-xl font-black text-sky-600'>Validando registros...</p>
+                          <div className='w-12 h-12 md:w-16 md:h-16 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4 md:mb-6'></div>
+                          <p className='text-lg md:text-xl font-black text-sky-600'>Validando registros...</p>
                         </div>
                       ) : (
                         <>
-                          <div className='w-24 h-24 bg-white shadow-xl rounded-[2.5rem] flex items-center justify-center text-sky-500 mb-8 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500'>
-                            <Upload size={40} />
+                          <div className='w-16 h-16 md:w-24 md:h-24 bg-white shadow-xl rounded-2xl md:rounded-[2.5rem] flex items-center justify-center text-sky-500 mb-6 md:mb-8 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500'>
+                            <Upload className="w-8 h-8 md:w-10 md:h-10" />
                           </div>
-                          <p className='text-2xl font-black text-slate-800 mb-3 text-center'>Haz clic para subir tu Excel</p>
-                          <p className='font-bold text-slate-400 text-center mb-8'>Rocita validará: Pacientes, Profesionales y Citas.</p>
+                          <p className='text-xl md:text-2xl font-black text-slate-800 mb-2 md:mb-3 text-center'>Haz clic para subir tu Excel</p>
+                          <p className='font-bold text-xs md:text-sm text-slate-400 text-center mb-6 md:mb-8'>Rocita validará: Pacientes, Profesionales y Citas.</p>
                           <div className='flex gap-4'>
                             <span className='px-4 py-2 bg-white border border-blue-100 rounded-xl text-xs font-bold text-sky-600 shadow-sm'>.xlsx</span>
                             <span className='px-4 py-2 bg-white border border-blue-100 rounded-xl text-xs font-bold text-sky-600 shadow-sm'>.csv</span>
@@ -579,8 +514,6 @@ export default function Dashboard() {
 
             </motion.div>
           </AnimatePresence>
-        </div>
-      </main>
 
       {/* Modal de Previsualización de Datos Excel (Etapa 1) */}
       <AnimatePresence>
@@ -737,6 +670,6 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </DashboardLayout>
   );
 }

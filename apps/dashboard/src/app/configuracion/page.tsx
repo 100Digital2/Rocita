@@ -28,8 +28,10 @@ import {
   Eye,
   EyeOff,
   Activity,
-  CheckCheck
+  CheckCheck,
+  Menu
 } from 'lucide-react';
+import DashboardLayout from '../../components/DashboardLayout';
 
 interface Toast {
   show: boolean;
@@ -167,8 +169,23 @@ export default function ConfiguracionPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex min-h-screen bg-[#E0F2FE] font-sans text-slate-900 overflow-hidden">
-      
+    <DashboardLayout
+      activeTab="configuracion"
+      title="Configuración del Portal"
+      subtitle="Parametrización General"
+      noPadding
+      headerExtra={
+        <div className="flex items-center gap-6">
+          <button
+            onClick={handleSaveSettings}
+            className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-full shadow-lg shadow-emerald-500/25 hover:shadow-emerald-600/30 transition-all flex items-center gap-2 active:scale-95 duration-200"
+          >
+            <Save size={14} />
+            Guardar Cambios
+          </button>
+        </div>
+      }
+    >
       {/* Toast Notification */}
       <AnimatePresence>
         {toast.show && (
@@ -188,86 +205,8 @@ export default function ConfiguracionPage() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-blue-100 p-8 flex flex-col gap-10 shadow-sm z-10">
-        <div className="flex items-center gap-3 font-black text-2xl tracking-tighter text-slate-900 group cursor-pointer">
-          <div className="relative">
-            <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-sky-500/20 group-hover:rotate-6 transition-transform">
-              R
-            </div>
-            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-sky-500 rounded-full border-2 border-white animate-pulse"></div>
-          </div>
-          <span>
-            <span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>
-          </span>
-        </div>
-
-        <nav className="flex flex-col gap-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 px-4">Principal</p>
-          <a href="/" className="flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group">    
-            <LayoutDashboard size={20} className="group-hover:scale-110 transition-transform" /> Campañas
-          </a>
-          <a href="/reportes" className="flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group">
-            <BarChart3 size={20} className="group-hover:scale-110 transition-transform" /> Reportes
-          </a>
-          <a href="/pacientes" className="flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group">
-            <User size={20} className="group-hover:scale-110 transition-transform" /> Pacientes
-          </a>
-          <a href="/notificaciones" className="flex items-center justify-between p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group">
-            <div className="flex items-center gap-3">
-              <Bell size={20} className="group-hover:scale-110 transition-transform" /> Notificaciones
-            </div>
-            <span className="px-2 py-0.5 bg-sky-500 text-white text-[10px] font-black rounded-full shadow-md shadow-sky-500/10 group-hover:scale-110 transition-all">3</span>
-          </a>
-          
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-6 mb-2 px-4">Sistema</p>
-          <a href="/configuracion" className="flex items-center justify-between p-4 bg-sky-500 text-white rounded-[1.5rem] font-bold shadow-xl shadow-sky-500/20 transition-all group">
-            <div className="flex items-center gap-3">
-              <Settings size={20} /> Configuración
-            </div>
-            <ChevronRight size={16} className="opacity-50" />
-          </a>
-          
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 p-4 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-[1.5rem] font-bold transition-all group mt-2"
-          >
-            <LogOut size={20} className="group-hover:scale-110 transition-transform" /> Cerrar Sesión
-          </button>
-        </nav>
-
-        <div className="mt-auto bg-sky-50 rounded-[2rem] p-6 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-20 h-20 bg-sky-500/5 rounded-full blur-2xl group-hover:bg-sky-500/10 transition-all"></div>
-          <p className="text-xs font-bold text-sky-600 mb-1">Plan Pro</p>
-          <p className="text-xs text-sky-800/60 leading-relaxed font-medium">Tu institución está operando al 100% de eficiencia.</p>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header */}
-        <header className="h-24 border-b border-blue-100 bg-white/50 backdrop-blur-md px-12 flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight">Configuración del Portal</h1>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Parametrización General</p>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <button
-              onClick={handleSaveSettings}
-              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-full shadow-lg shadow-emerald-500/25 hover:shadow-emerald-600/30 transition-all flex items-center gap-2 active:scale-95 duration-200"
-            >
-              <Save size={14} />
-              Guardar Cambios
-            </button>
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center font-bold text-slate-600">
-              {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'JJ'}
-            </div>
-          </div>
-        </header>
-
-        {/* Workspace Panels (Grid: Left controls, Right WhatsApp simulator) */}
-        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+      {/* Workspace Panels (Grid: Left controls, Right WhatsApp simulator) */}
+      <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
           
           {/* Left panel: Config controls */}
           <div className="flex-1 overflow-y-auto p-12 space-y-8 border-r border-blue-50 bg-slate-50/30">
@@ -812,8 +751,6 @@ export default function ConfiguracionPage() {
           </div>
 
         </div>
-      </main>
-
-    </div>
+    </DashboardLayout>
   );
 }

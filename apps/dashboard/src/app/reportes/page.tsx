@@ -16,8 +16,11 @@ import {
   ChevronRight,
   ArrowUpRight,
   ArrowDownRight,
-  BarChart3
+  BarChart3,
+  Menu,
+  X
 } from 'lucide-react';
+import DashboardLayout from '../../components/DashboardLayout';
 
 export default function ReportesPage() {
   const router = useRouter();
@@ -75,73 +78,18 @@ export default function ReportesPage() {
   ];
 
   return (
-    <div className='flex min-h-screen bg-[#E0F2FE] font-sans text-slate-900 overflow-hidden'>
-      {/* Sidebar */}
-      <aside className='w-72 bg-white border-r border-blue-100 p-8 flex flex-col gap-10 shadow-sm z-10'>
-        <div className='flex items-center gap-3 font-black text-2xl tracking-tighter text-slate-900 group cursor-pointer'>
-          <div className='relative'>
-            <div className='w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-sky-500/20 group-hover:rotate-6 transition-transform'>
-              R
-            </div>
-            <div className='absolute -top-0.5 -right-0.5 w-3 h-3 bg-sky-500 rounded-full border-2 border-white animate-pulse'></div>
-          </div>
-          <span>
-            <span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>
-          </span>
+    <DashboardLayout
+      activeTab="reportes"
+      title="Métricas de Impacto"
+      subtitle="Visión Ejecutiva"
+      headerExtra={
+        <div className='flex items-center gap-4 bg-white p-2 rounded-2xl border border-blue-50'>
+          <button className='px-4 py-2 bg-sky-500 text-white rounded-xl text-xs font-black shadow-lg shadow-sky-500/20 transition-all'>Mes Actual</button>
+          <button className='px-4 py-2 text-slate-400 text-xs font-black hover:text-slate-600 transition-all'>Trimestre</button>
         </div>
-
-        <nav className='flex flex-col gap-2'>
-          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 px-4'>Principal</p>
-          <a href='/' className='flex items-center justify-between group gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all'>    
-            <div className='flex items-center gap-3'>
-              <LayoutDashboard size={20} /> Campañas
-            </div>
-          </a>
-          <a href='/reportes' className='flex items-center justify-between group gap-3 p-4 bg-sky-500 text-white rounded-[1.5rem] font-bold shadow-xl shadow-sky-500/20 transition-all'>    
-            <div className='flex items-center gap-3'>
-              <BarChart3 size={20} /> Reportes
-            </div>
-            <ChevronRight size={16} className='opacity-50' />
-          </a>
-          <a href='/pacientes' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
-            <User size={20} className='group-hover:scale-110 transition-transform' /> Pacientes
-          </a>
-          <a href='/notificaciones' className='flex items-center justify-between p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
-            <div className='flex items-center gap-3'>
-              <Bell size={20} className='group-hover:scale-110 transition-transform' /> Notificaciones
-            </div>
-            <span className='px-2 py-0.5 bg-sky-500 text-white text-[10px] font-black rounded-full shadow-md shadow-sky-500/10 group-hover:scale-110 transition-all'>3</span>
-          </a>
-          
-          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-6 mb-2 px-4'>Sistema</p>
-          <a href='/configuracion' className='flex items-center gap-3 p-4 text-slate-500 hover:bg-sky-50 hover:text-sky-600 rounded-[1.5rem] font-bold transition-all group'>
-            <Settings size={20} className='group-hover:scale-110 transition-transform' /> Configuración
-          </a>
-          
-          <button 
-            onClick={handleLogout}
-            className='flex items-center gap-3 p-4 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-[1.5rem] font-bold transition-all group mt-2'
-          >
-            <LogOut size={20} className='group-hover:scale-110 transition-transform' /> Cerrar Sesión
-          </button>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className='flex-1 flex flex-col h-screen overflow-hidden'>
-        <header className='h-24 border-b border-blue-100 bg-white/50 backdrop-blur-md px-12 flex items-center justify-between shrink-0'>
-          <div>
-            <h1 className='text-2xl font-black tracking-tight'>Métricas de Impacto</h1>
-            <p className='text-xs font-bold text-slate-400 uppercase tracking-widest'>Visión Ejecutiva</p>
-          </div>
-          
-          <div className='flex items-center gap-4 bg-white p-2 rounded-2xl border border-blue-50'>
-            <button className='px-4 py-2 bg-sky-500 text-white rounded-xl text-xs font-black shadow-lg shadow-sky-500/20 transition-all'>Mes Actual</button>
-            <button className='px-4 py-2 text-slate-400 text-xs font-black hover:text-slate-600 transition-all'>Trimestre</button>
-          </div>
-        </header>
-
-        <div className='flex-1 overflow-y-auto p-12 custom-scrollbar'>
+      }
+    >
+        <div className='space-y-12'>
           {/* KPI Cards */}
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12'>
             {kpis.map((kpi, i) => (
@@ -272,7 +220,6 @@ export default function ReportesPage() {
             </div>
           </div>
         </div>
-      </main>
       
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -289,7 +236,7 @@ export default function ReportesPage() {
           background: #BAE6FD;
         }
       `}</style>
-    </div>
+    </DashboardLayout>
   );
 }
 
