@@ -25,7 +25,8 @@ import {
   CheckCheck,
   RefreshCw,
   Eye,
-  Menu
+  Menu,
+  Plus
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 
@@ -75,6 +76,16 @@ export default function PacientesPage() {
   const [isSendingReminder, setIsSendingReminder] = useState(false);
   const [sendingStep, setSendingStep] = useState('');
   const [sendingProgress, setSendingProgress] = useState(0);
+
+  // Estados para registrar pacientes uno por uno
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newPatName, setNewPatName] = useState('');
+  const [newPatDocType, setNewPatDocType] = useState('CC');
+  const [newPatDocNum, setNewPatDocNum] = useState('');
+  const [newPatGender, setNewPatGender] = useState('M');
+  const [newPatPhone, setNewPatPhone] = useState('');
+  const [newPatEmail, setNewPatEmail] = useState('');
+  const [isSavingPatient, setIsSavingPatient] = useState(false);
 
   // Default patients dataset matching requested mock data
   const [patients, setPatients] = useState<Patient[]>([
@@ -181,52 +192,169 @@ export default function PacientesPage() {
     }
   ]);
 
-  // Auth Protection Check & Fetch Patients from Backend
+  // Cargar datos (tanto citas como perfiles independientes de pacientes)
+  const fetchData = async () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const token = localStorage.getItem('rocita_token');
+
+    let appointments: any[] = [];
+    let profiles: any[] = [];
+
+    // 1. Cargar citas reales del backend
+    try {
+      const res = await fetch(`${apiUrl}/patients`);
+      if (res.ok) {
+        appointments = await res.json();
+      }
+    } catch (err) {
+      console.warn('Backend offline o error al cargar citas, usando demo.', err);
+    }
+
+    // 2. Cargar perfiles de pacientes creados uno a uno
+    try {
+      const res = await fetch(`${apiUrl}/patients-profiles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        profiles = await res.json();
+      }
+    } catch (err) {
+      console.warn('Backend offline o error al obtener perfiles, cargando de localStorage...', err);
+      const offlineProfiles = localStorage.getItem('rocita_patient_profiles');
+      if (offlineProfiles) {
+        profiles = JSON.parse(offlineProfiles);
+      }
+    }
+
+    // Si ambos están vacíos (por ejemplo, modo offline inicial sin datos guardados)
+    if (appointments.length === 0 && profiles.length === 0) {
+      // Dejar los datos estáticos iniciales
+      return;
+    }
+
+    // Mapear citas existentes a la interfaz de la UI
+    const mappedAppointments = appointments.map((p: any) => ({
+      id: `pat-${p.id}`,
+      name: p.name,
+      age: p.age || 30,
+      documentType: p.documentType || 'CC',
+      documentNumber: p.documentNumber || '',
+      gender: p.gender || '',
+      phone: p.phone || '',
+      email: p.email || '',
+      status: p.status || 'Pendiente',
+      specialty: p.specialty || 'Consulta General',
+      doctor: p.doctor || 'Dr. Alejandro Restrepo',
+      doctorEmail: p.doctorEmail || '',
+      doctorPhone: p.doctorPhone || '',
+      nextAppointment: p.nextAppointment || 'Próximamente',
+      history: [
+        { date: 'Hoy', specialty: p.specialty || 'Consulta General', doctor: p.doctor || 'Dr. Alejandro Restrepo', status: p.status || 'Pendiente' }
+      ],
+      chatHistory: []
+    }));
+
+    // Filtrar perfiles independientes que no tienen cita en la lista de citas para listarlos como "Sin Citas"
+    const appointmentDocNumbers = new Set(mappedAppointments.map(a => a.documentNumber.toString().trim()));
+
+    const profilesWithoutAppointments = profiles
+      .filter(p => !appointmentDocNumbers.has(p.documentNumber.toString().trim()))
+      .map(p => ({
+        id: `profile-${p.id}`,
+        name: p.name,
+        age: 30,
+        documentType: p.documentType || 'CC',
+        documentNumber: p.documentNumber || '',
+        gender: p.gender || '',
+        phone: p.phone || '',
+        email: p.email || '',
+        status: 'Pendiente' as const,
+        specialty: 'Sin asignar',
+        doctor: 'Sin asignar',
+        nextAppointment: 'Sin citas programadas',
+        history: [],
+        chatHistory: []
+      }));
+
+    setPatients([...mappedAppointments, ...profilesWithoutAppointments]);
+  };
+
+  // Auth Protection Check & Fetch Data
   useEffect(() => {
     const auth = localStorage.getItem('rocita_auth');
     if (!auth) {
       router.push('/login');
     } else {
       setIsAuthenticated(true);
-      
-      // Intentar cargar pacientes de la base de datos real SQLite de NestJS
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-      fetch(`${apiUrl}/patients`)
-        .then((res) => {
-          if (res.ok) return res.json();
-          throw new Error('Error al conectar');
-        })
-        .then((data) => {
-          if (data && data.length > 0) {
-            // Mapeamos los datos de la base de datos a la interfaz de la página
-            const mappedPatients = data.map((p: any) => ({
-              id: `pat-${p.id}`,
-              name: p.name,
-              age: p.age || 30,
-              documentType: p.documentType || 'CC',
-              documentNumber: p.documentNumber || '',
-              gender: p.gender || '',
-              phone: p.phone || '',
-              email: p.email || '',
-              status: p.status || 'Pendiente',
-              specialty: p.specialty || 'Consulta General',
-              doctor: p.doctor || 'Dr. Alejandro Restrepo',
-              doctorEmail: p.doctorEmail || '',
-              doctorPhone: p.doctorPhone || '',
-              nextAppointment: p.nextAppointment || 'Próximamente',
-              history: [
-                { date: 'Hoy', specialty: p.specialty || 'Consulta General', doctor: p.doctor || 'Dr. Alejandro Restrepo', status: p.status || 'Pendiente' }
-              ],
-              chatHistory: []
-            }));
-            setPatients(mappedPatients);
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend desconectado o sin registros en SQLite. Usando pacientes estáticos de la demo.', err);
-        });
+      fetchData();
     }
   }, [router]);
+
+  const handleCreatePatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPatName || !newPatDocNum || !newPatPhone || !newPatEmail) {
+      alert('Por favor complete todos los campos requeridos.');
+      return;
+    }
+
+    setIsSavingPatient(true);
+    const token = localStorage.getItem('rocita_token');
+    const patientPayload = {
+      name: newPatName,
+      documentType: newPatDocType,
+      documentNumber: newPatDocNum,
+      gender: newPatGender,
+      phone: newPatPhone,
+      email: newPatEmail,
+    };
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+    try {
+      const res = await fetch(`${apiUrl}/patients-profiles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(patientPayload),
+      });
+
+      if (res.ok) {
+        fetchData();
+        setShowCreateModal(false);
+        // Reset form
+        setNewPatName('');
+        setNewPatDocNum('');
+        setNewPatPhone('');
+        setNewPatEmail('');
+      } else {
+        throw new Error('Error al registrar el paciente');
+      }
+    } catch (err) {
+      console.warn('Backend offline, registrando paciente en modo local...', err);
+      const offlineProfiles = localStorage.getItem('rocita_patient_profiles');
+      const currentProfiles = offlineProfiles ? JSON.parse(offlineProfiles) : [];
+      const newProfile = {
+        id: Date.now(),
+        ...patientPayload,
+      };
+      const updatedProfiles = [...currentProfiles, newProfile];
+      localStorage.setItem('rocita_patient_profiles', JSON.stringify(updatedProfiles));
+      
+      fetchData();
+      setShowCreateModal(false);
+      // Reset form
+      setNewPatName('');
+      setNewPatDocNum('');
+      setNewPatPhone('');
+      setNewPatEmail('');
+    } finally {
+      setIsSavingPatient(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('rocita_auth');
@@ -473,8 +601,16 @@ export default function PacientesPage() {
                 })}
               </div>
               
-              <div className="text-xs font-bold text-slate-400 bg-slate-50 px-4 py-2.5 rounded-full">
-                Mostrando <span className="text-slate-800">{filteredPatients.length}</span> de <span className="text-slate-800">{patients.length}</span> registros
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-full text-xs font-black shadow-lg shadow-sky-500/20 transition-all flex items-center gap-2 active:scale-95 duration-200"
+                >
+                  <Plus size={14} /> Registrar Paciente
+                </button>
+                <div className="text-xs font-bold text-slate-400 bg-slate-50 px-4 py-2.5 rounded-full">
+                  Mostrando <span className="text-slate-800">{filteredPatients.length}</span> de <span className="text-slate-800">{patients.length}</span> registros
+                </div>
               </div>
             </div>
 
@@ -809,6 +945,143 @@ export default function PacientesPage() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Modal para registrar un nuevo paciente uno por uno */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCreateModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+
+            {/* Content Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white border border-white rounded-[2.5rem] shadow-2xl p-8 max-w-lg w-full flex flex-col gap-6 z-10"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Header */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center font-black">
+                  <Plus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Registrar Nuevo Paciente</h3>
+                  <p className="text-xs text-slate-400 font-bold">Añade los datos demográficos y de contacto del cliente.</p>
+                </div>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleCreatePatient} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Nombre Completo</label>
+                  <input
+                    type="text"
+                    required
+                    value={newPatName}
+                    onChange={(e) => setNewPatName(e.target.value)}
+                    placeholder="Carlos Humberto Pérez"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-bold text-slate-800"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Tipo Identificación</label>
+                    <select
+                      value={newPatDocType}
+                      onChange={(e) => setNewPatDocType(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-bold text-slate-800 cursor-pointer"
+                    >
+                      <option value="CC">Cédula Ciudadanía (CC)</option>
+                      <option value="TI">Tarjeta Identidad (TI)</option>
+                      <option value="CE">Cédula Extranjería (CE)</option>
+                      <option value="PEP">PEP</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Nro. Documento</label>
+                    <input
+                      type="text"
+                      required
+                      value={newPatDocNum}
+                      onChange={(e) => setNewPatDocNum(e.target.value)}
+                      placeholder="10102020"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-1 space-y-1">
+                    <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Género</label>
+                    <select
+                      value={newPatGender}
+                      onChange={(e) => setNewPatGender(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-bold text-slate-800 cursor-pointer"
+                    >
+                      <option value="M">Masc.</option>
+                      <option value="F">Fem.</option>
+                      <option value="O">Otro</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Teléfono Móvil</label>
+                    <input
+                      type="text"
+                      required
+                      value={newPatPhone}
+                      onChange={(e) => setNewPatPhone(e.target.value)}
+                      placeholder="+57 300 123 4567"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Correo Electrónico</label>
+                  <input
+                    type="email"
+                    required
+                    value={newPatEmail}
+                    onChange={(e) => setNewPatEmail(e.target.value)}
+                    placeholder="carlos.perez@email.com"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-bold text-slate-800"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSavingPatient}
+                  className="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-sky-500/25 transition-all flex items-center justify-center gap-2 active:scale-95 duration-200 disabled:opacity-75"
+                >
+                  {isSavingPatient ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin font-bold"></div>
+                  ) : (
+                    <>
+                      <Plus size={14} /> Registrar Paciente
+                    </>
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </DashboardLayout>

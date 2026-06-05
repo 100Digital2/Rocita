@@ -19,4 +19,13 @@ export class User {
 
   @Column()
   role: string;
+
+  @Column({ nullable: true })
+  nit: string;
+
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  phone: string;
 }

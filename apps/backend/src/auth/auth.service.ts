@@ -35,7 +35,7 @@ export class AuthService implements OnModuleInit {
     }
   }
 
-  async register(userData: { name: string; email: string; pass: string; clinicName: string; role: string }) {
+  async register(userData: { clinicName: string; nit: string; address: string; phone: string; email: string; pass: string }) {
     const emailLower = userData.email.toLowerCase();
     const existingUser = await this.userRepository.findOne({ where: { email: emailLower } });
     
@@ -49,9 +49,12 @@ export class AuthService implements OnModuleInit {
     const newUser = this.userRepository.create({
       email: emailLower,
       passwordHash,
-      name: userData.name,
+      name: userData.clinicName, // Para compatibilidad con avatar/iniciales
       clinicName: userData.clinicName,
-      role: userData.role,
+      role: 'admin',
+      nit: userData.nit,
+      address: userData.address,
+      phone: userData.phone,
     });
 
     await this.userRepository.save(newUser);
@@ -63,6 +66,9 @@ export class AuthService implements OnModuleInit {
         name: newUser.name,
         clinicName: newUser.clinicName,
         role: newUser.role,
+        nit: newUser.nit,
+        address: newUser.address,
+        phone: newUser.phone,
       }
     };
   }
@@ -88,6 +94,9 @@ export class AuthService implements OnModuleInit {
       role: user.role,
       name: user.name,
       clinicName: user.clinicName,
+      nit: user.nit,
+      address: user.address,
+      phone: user.phone,
     };
 
     return {
@@ -97,6 +106,9 @@ export class AuthService implements OnModuleInit {
         name: user.name,
         role: user.role,
         clinicName: user.clinicName,
+        nit: user.nit,
+        address: user.address,
+        phone: user.phone,
       },
     };
   }

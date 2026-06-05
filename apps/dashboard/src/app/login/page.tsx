@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Mail, ChevronRight, Activity, ShieldCheck, Eye, EyeOff, Sparkles, User, Building, HeartPulse } from 'lucide-react';
+import { Lock, Mail, ChevronRight, Activity, ShieldCheck, Eye, EyeOff, Sparkles, User, Building, HeartPulse, MapPin, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
@@ -13,9 +13,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
-  const [clinicName, setClinicName] = useState('');
-  const [role, setRole] = useState('doctor');
+  const [clinicName, setClinicName] = useState(''); // Representa la IPS / Nombre de la empresa
+  const [nit, setNit] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -81,7 +82,7 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password, clinicName, role }),
+        body: JSON.stringify({ clinicName, nit, address, phone, email, password }),
       });
 
       if (response.ok) {
@@ -105,7 +106,15 @@ export default function LoginPage() {
               setIsLoading(false);
             }
           } catch (loginErr) {
-            login('demo-jwt-token-offline-mode', { email, name, role });
+            login('demo-jwt-token-offline-mode', { 
+              email, 
+              name: clinicName, 
+              clinicName, 
+              role: 'admin',
+              nit,
+              address,
+              phone
+            });
           }
         }, 1500);
         return;
@@ -122,7 +131,15 @@ export default function LoginPage() {
       setTimeout(() => {
         setSuccessMessage('¡Cuenta registrada exitosamente (Modo Demo Offline)!');
         setTimeout(() => {
-          login('demo-jwt-token-offline-mode', { email, name, role });
+          login('demo-jwt-token-offline-mode', { 
+            email, 
+            name: clinicName, 
+            clinicName, 
+            role: 'admin',
+            nit,
+            address,
+            phone
+          });
         }, 1500);
       }, 1000);
     }
@@ -198,29 +215,14 @@ export default function LoginPage() {
                   className="space-y-4.5 overflow-hidden"
                 >
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Nombre Completo</label>
-                    <div className="relative group">
-                      <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
-                      <input 
-                        type="text" 
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Dr. Alejandro Ruiz"
-                        className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
-                        required={isRegister}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Nombre de la Clínica / Consultorio</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">IPS / Nombre de la Empresa</label>
                     <div className="relative group">
                       <Building className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
                       <input 
                         type="text" 
                         value={clinicName}
                         onChange={(e) => setClinicName(e.target.value)}
-                        placeholder="Clínica del Rosario / Consultorio Principal"
+                        placeholder="IPS Salud Integral / Clínicas Unidas"
                         className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
                         required={isRegister}
                       />
@@ -228,22 +230,47 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Rol Clínico</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">NIT / Identificación Legal</label>
                     <div className="relative group">
-                      <HeartPulse className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors z-10" size={18} />
-                      <select 
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-8 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5 appearance-none cursor-pointer relative"
+                      <ShieldCheck className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        value={nit}
+                        onChange={(e) => setNit(e.target.value)}
+                        placeholder="900.123.456-7"
+                        className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
                         required={isRegister}
-                      >
-                        <option value="doctor">Médico / Especialista</option>
-                        <option value="assistant">Asistente Clínico</option>
-                        <option value="admin">Administrador del Centro</option>
-                      </select>
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <ChevronRight className="rotate-90" size={16} />
-                      </div>
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Dirección Física</label>
+                    <div className="relative group">
+                      <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Calle 45 # 12 - 34, Bogotá"
+                        className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
+                        required={isRegister}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Teléfono de Contacto</label>
+                    <div className="relative group">
+                      <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+57 300 123 4567"
+                        className="w-full bg-slate-50/70 border-2 border-slate-100/50 focus:border-sky-400 focus:bg-white rounded-[2rem] py-4 pl-14 pr-6 outline-none transition-all font-bold text-slate-800 focus:ring-4 focus:ring-sky-500/5"
+                        required={isRegister}
+                      />
                     </div>
                   </div>
                 </motion.div>

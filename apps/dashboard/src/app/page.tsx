@@ -20,87 +20,138 @@ import {
   Calendar,
   LogOut,
   AlertCircle,
-  BarChart3
+  BarChart3,
+  MessageCircle,
+  PhoneCall,
+  Sparkles,
+  Zap,
+  CheckCheck,
+  Activity
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
 
-const joinExcelSheets = (workbook: XLSX.WorkBook): any[] => {
-  const rawPatients = XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']) as any[];
-  const rawProfessionals = XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']) as any[];
+const joinExcelSheets = (workbook: XLSX.WorkBook, dbPatients: any[], dbDoctors: any[]): any[] => {
   const rawAppointments = XLSX.utils.sheet_to_json(workbook.Sheets['Citas']) as any[];
+  
+  // Si existen las pestañas opcionales de Pacientes y Profesionales en el Excel, las cargamos
+  const excelPatients = workbook.Sheets['Pacientes'] ? XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']) as any[] : [];
+  const excelProfessionals = workbook.Sheets['Profesionales'] ? XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']) as any[] : [];
 
-  // Determine if it's the Demo style (keys like 'id', 'nombre', 'telefono')
-  // or the 50-patient style (keys like 'Nombre', 'Cedula', 'Telefono')
-  const hasIdKey = rawPatients.length > 0 && ('id' in rawPatients[0] || 'Id' in rawPatients[0]);
-
-  if (hasIdKey) {
-    return rawPatients.map((pat) => {
-      const patId = pat.id ?? pat.Id;
-      const apt = rawAppointments.find(
-        (a) => Number(a.id_paciente ?? a.PacienteId ?? a.paciente_id) === Number(patId)
-      );
-      const profId = apt ? (apt.id_profesional ?? apt.ProfesionalId ?? apt.profesional_id) : null;
-      const prof = profId ? rawProfessionals.find(
-        (p) => Number(p.id ?? p.Id) === Number(profId)
-      ) : null;
-
-      const dateStr = apt ? `${apt.fecha || apt.Fecha || ''} ${apt.hora || apt.Hora || ''}`.trim() : '';
-
-      const profEmail = prof ? (prof.correo ?? prof.Correo ?? prof.email ?? prof.Email ?? '') : '';
-      const profPhone = prof ? (prof.celular ?? prof.Celular ?? prof.telefono ?? prof.Telefono ?? prof.phone ?? prof.Phone ?? '') : '';
-
-      return {
-        name: pat.nombre ?? pat.Nombre ?? pat.name ?? 'Paciente Desconocido',
-        phone: pat.telefono ?? pat.Telefono ?? pat.phone ?? '',
-        email: pat.email ?? pat.Email ?? pat.correo ?? pat.Correo ?? '',
-        documentType: pat.documentType ?? pat.tipo_documento ?? pat.tipoDocumento ?? pat['Tipo Documento'] ?? pat['tipo documento'] ?? pat.tipo ?? pat.Tipo ?? 'CC',
-        documentNumber: patId ? String(patId) : '',
-        gender: pat.gender ?? pat.sexo ?? pat.Sexo ?? pat.genero ?? pat.Genero ?? pat.Género ?? '',
-        status: apt ? (apt.estado ?? apt.Estado ?? 'Pendiente') : 'Pendiente',
-        doctor: prof ? (prof.nombre ?? prof.Nombre) : 'Sin asignar',
-        doctorEmail: profEmail,
-        doctorPhone: profPhone,
-        specialty: prof ? (prof.especialidad ?? prof.Especialidad) : 'Consulta General',
-        nextAppointment: dateStr || 'Próximamente'
-      };
+  return rawAppointments.map((apt) => {
+    // Identificar el documento del paciente en la cita
+    const patDoc = (apt.Documento ?? apt.documento ?? apt['Documento Paciente'] ?? apt['documento_paciente'] ?? apt.Identificacion ?? apt.identificacion ?? apt['Identificacion Paciente'] ?? apt['identificacion_paciente'] ?? apt.Cedula ?? apt.cedula ?? apt['Cedula Paciente'] ?? apt['Cédula Paciente'] ?? apt.id_paciente ?? apt.paciente_id ?? apt.PacienteId ?? apt.Paciente ?? apt.paciente ?? '').toString().trim().toLowerCase();
+    
+    // 1. Buscar información del paciente en: (1) Excel opcional, (2) Base de datos precargada
+    let patInfo = excelPatients.find(p => {
+      const pDoc = (p.Documento ?? p.documento ?? p.Identificacion ?? p.identificacion ?? p.Cedula ?? p.cedula ?? p.id ?? p.Id ?? '').toString().trim().toLowerCase();
+      return pDoc === patDoc;
     });
-  } else {
-    return rawPatients.map((pat) => {
-      // Find patient document/ID:
-      const patDoc = (pat.Documento ?? pat.documento ?? pat.Identificacion ?? pat.identificacion ?? pat.Cedula ?? pat.cedula ?? pat.id ?? pat.Id ?? '').toString().trim();
-      const patName = (pat.Nombre ?? pat.nombre ?? pat.name ?? '').toString().trim().toLowerCase();
-      
-      const apt = rawAppointments.find((a) => {
-        const aptDoc = (a.Documento ?? a.documento ?? a['Documento Paciente'] ?? a['documento_paciente'] ?? a.Identificacion ?? a.identificacion ?? a['Identificacion Paciente'] ?? a['identificacion_paciente'] ?? a.Cedula ?? a.cedula ?? a['Cedula Paciente'] ?? a['Cédula Paciente'] ?? a.id_paciente ?? a.paciente_id ?? a.Paciente ?? a.paciente ?? '').toString().trim().toLowerCase();
-        if (patDoc && aptDoc === patDoc.toLowerCase()) return true;
-        return aptDoc === patName;
+
+    if (!patInfo) {
+      // Buscar en base de datos precargada
+      patInfo = dbPatients.find(p => p.documentNumber.toString().trim().toLowerCase() === patDoc);
+    }
+
+    // 2. Buscar información del médico en: (1) Excel opcional, (2) Base de datos precargada
+    const docName = (apt.Doctor ?? apt.doctor ?? apt.Médico ?? apt.medico ?? apt.id_profesional ?? apt.profesional_id ?? '').toString().trim().toLowerCase();
+    let profInfo = excelProfessionals.find(p => {
+      const pName = (p.Nombre ?? p.nombre ?? p.name ?? '').toString().trim().toLowerCase();
+      const pId = (p.id ?? p.Id ?? '').toString().trim().toLowerCase();
+      return pName === docName || pId === docName;
+    });
+
+    if (!profInfo) {
+      // Buscar en base de datos de profesionales precargados
+      profInfo = dbDoctors.find(p => {
+        const pName = p.name.toString().trim().toLowerCase();
+        const pId = p.id.toString().trim().toLowerCase();
+        return pName === docName || pId === docName;
       });
-      
-      const docName = apt ? (apt.Doctor ?? apt.doctor ?? apt.Médico ?? apt.medico) : null;
-      const prof = docName ? rawProfessionals.find(
-        (p) => (p.Nombre ?? p.nombre ?? '').toString().trim().toLowerCase() === docName.toString().trim().toLowerCase()
-      ) : null;
+    }
 
-      const profEmail = prof ? (prof.correo ?? prof.Correo ?? prof.email ?? prof.Email ?? '') : '';
-      const profPhone = prof ? (prof.celular ?? prof.Celular ?? prof.telefono ?? prof.Telefono ?? prof.phone ?? prof.Phone ?? '') : '';
+    // Rellenar fecha de la cita
+    const dateStr = `${apt.fecha || apt.Fecha || apt['Fecha Cita'] || apt.fecha_cita || ''} ${apt.hora || apt.Hora || ''}`.trim();
 
-      return {
-        name: pat.Nombre ?? pat.nombre ?? pat.name ?? 'Paciente Desconocido',
-        phone: pat.Telefono ?? pat.telefono ?? pat.phone ?? '',
-        email: pat.Correo ?? pat.correo ?? pat.email ?? pat.Email ?? '',
-        documentType: pat['Tipo Documento'] ?? pat['tipo_documento'] ?? pat['Tipo de Documento'] ?? pat['Tipo'] ?? pat.documentType ?? pat.tipoDocumento ?? pat.tipo ?? pat.Tipo ?? 'CC',
-        documentNumber: patDoc,
-        gender: pat.Sexo ?? pat.sexo ?? pat.gender ?? pat.Gender ?? pat.Genero ?? pat.genero ?? pat.Género ?? '',
-        status: apt ? (apt.estado ?? apt.Estado ?? 'Pendiente') : 'Pendiente',
-        doctor: docName ?? 'Sin asignar',
-        doctorEmail: profEmail,
-        doctorPhone: profPhone,
-        specialty: prof ? (prof.Especialidad ?? prof.especialidad) : 'Consulta General',
-        nextAppointment: apt ? (apt['Fecha Cita'] ?? apt.fecha_cita ?? apt.Fecha ?? '') : 'Próximamente'
-      };
-    });
+    return {
+      name: patInfo ? (patInfo.nombre ?? patInfo.Nombre ?? patInfo.name) : (apt.nombre ?? apt.Nombre ?? apt.name ?? `Paciente (${patDoc})`),
+      phone: patInfo ? (patInfo.telefono ?? patInfo.Telefono ?? patInfo.phone) : (apt.telefono ?? apt.Telefono ?? apt.phone ?? ''),
+      email: patInfo ? (patInfo.email ?? patInfo.Email ?? patInfo.correo ?? patInfo.Correo) : (apt.email ?? apt.Email ?? apt.correo ?? apt.Correo ?? ''),
+      documentType: patInfo ? (patInfo.documentType ?? patInfo.tipo_documento ?? patInfo.tipoDocumento ?? patInfo['Tipo Documento'] ?? 'CC') : 'CC',
+      documentNumber: patDoc || (patInfo ? patInfo.documentNumber : ''),
+      gender: patInfo ? (patInfo.gender ?? patInfo.sexo ?? patInfo.Sexo ?? patInfo.genero ?? patInfo.Género ?? '') : '',
+      status: apt.estado ?? apt.Estado ?? 'Pendiente',
+      doctor: profInfo ? profInfo.name : (apt.Doctor ?? apt.doctor ?? apt.Médico ?? apt.medico ?? 'Sin asignar'),
+      doctorEmail: profInfo ? profInfo.email : (apt['Correo Doctor'] ?? apt['Correo Profesional'] ?? ''),
+      doctorPhone: profInfo ? profInfo.phone : (apt['Celular Doctor'] ?? apt['Celular Profesional'] ?? apt['Telefono Doctor'] ?? ''),
+      specialty: profInfo ? profInfo.specialty : (apt.Especialidad ?? apt.especialidad ?? 'Consulta General'),
+      nextAppointment: dateStr || 'Próximamente'
+    };
+  });
+};
+
+const getCardStyle = (step: number, statusText: string) => {
+  if (step === 0) {
+    return {
+      border: 'border-slate-100',
+      glow: 'shadow-slate-500/5',
+      badgeBg: 'bg-slate-50 text-slate-500 border border-slate-100',
+      dotColor: 'bg-slate-400',
+      glowColor: 'bg-slate-400/20'
+    };
   }
+  if (step === 1) {
+    return {
+      border: 'border-emerald-500/30',
+      glow: 'shadow-emerald-500/10 shadow-lg',
+      badgeBg: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+      dotColor: 'bg-emerald-500 animate-pulse',
+      glowColor: 'bg-emerald-500/20'
+    };
+  }
+  if (step === 2) {
+    return {
+      border: 'border-amber-500/30',
+      glow: 'shadow-amber-500/10 shadow-lg',
+      badgeBg: 'bg-amber-50 text-amber-700 border border-amber-100',
+      dotColor: 'bg-amber-500 animate-pulse',
+      glowColor: 'bg-amber-500/20'
+    };
+  }
+  if (step === 3) {
+    return {
+      border: 'border-emerald-500/50',
+      glow: 'shadow-emerald-500/15 shadow-xl',
+      badgeBg: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+      dotColor: 'bg-emerald-500',
+      glowColor: 'bg-emerald-500/20'
+    };
+  }
+  if (step === 4) {
+    return {
+      border: 'border-sky-500/50',
+      glow: 'shadow-sky-500/15 shadow-xl',
+      badgeBg: 'bg-sky-100 text-sky-800 border border-sky-200',
+      dotColor: 'bg-sky-500',
+      glowColor: 'bg-sky-500/20'
+    };
+  }
+  if (step === 5) {
+    return {
+      border: 'border-purple-500/50',
+      glow: 'shadow-purple-500/15 shadow-xl',
+      badgeBg: 'bg-purple-100 text-purple-800 border border-purple-200',
+      dotColor: 'bg-purple-500',
+      glowColor: 'bg-purple-500/20'
+    };
+  }
+  return {
+    border: 'border-slate-200',
+    glow: 'shadow-slate-500/5',
+    badgeBg: 'bg-slate-100 text-slate-500',
+    dotColor: 'bg-slate-400',
+    glowColor: 'bg-slate-400/20'
+  };
 };
 
 export default function Dashboard() {
@@ -117,6 +168,11 @@ export default function Dashboard() {
   const [sendProgress, setSendProgress] = useState(0);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const [fullPatientsList, setFullPatientsList] = useState<any[]>([]);
+  const [liveSendStatus, setLiveSendStatus] = useState<any[]>([]);
+
+  // Base de datos de pacientes y médicos precargados
+  const [dbPatients, setDbPatients] = useState<any[]>([]);
+  const [dbDoctors, setDbDoctors] = useState<any[]>([]);
 
   // Estados de la Etapa 1: Previsualización de Datos de Excel y Pestañas
   const [previewData, setPreviewData] = useState<{
@@ -136,6 +192,40 @@ export default function Dashboard() {
       setIsAuthenticated(true);
     }
   }, [router]);
+
+  // Cargar base de datos local para cruce inteligente en caliente
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const token = localStorage.getItem('rocita_token');
+
+    // Cargar perfiles de pacientes
+    fetch(`${apiUrl}/patients-profiles`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error();
+      })
+      .then(data => setDbPatients(data))
+      .catch(() => {
+        const local = localStorage.getItem('rocita_patient_profiles');
+        if (local) setDbPatients(JSON.parse(local));
+      });
+
+    // Cargar médicos
+    fetch(`${apiUrl}/doctors`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error();
+      })
+      .then(data => setDbDoctors(data))
+      .catch(() => {
+        const local = localStorage.getItem('rocita_doctors');
+        if (local) setDbDoctors(JSON.parse(local));
+      });
+  }, [isAuthenticated, apiUrl]);
 
   const handleLogout = () => {
     localStorage.removeItem('rocita_auth');
@@ -158,30 +248,37 @@ export default function Dashboard() {
       const workbook = XLSX.read(data);
       const sheetNames = workbook.SheetNames;
 
-      // Validación de pestañas requeridas
-      const requiredSheets = ['Pacientes', 'Profesionales', 'Citas'];
+      // Validación de pestañas requeridas: solo Citas es mandatoria
+      const requiredSheets = ['Citas'];
       const missingSheets = requiredSheets.filter(s => !sheetNames.includes(s));
 
       if (missingSheets.length > 0) {
-        throw new Error(`Faltan las siguientes pestañas: ${missingSheets.join(', ')}`);
+        throw new Error(`Falta la pestaña requerida: ${missingSheets.join(', ')}`);
       }
 
+      const parsedAppointments = XLSX.utils.sheet_to_json(workbook.Sheets['Citas']) as any[];
+      const parsedPatients = sheetNames.includes('Pacientes') 
+        ? XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']) as any[] 
+        : [];
+      const parsedProfessionals = sheetNames.includes('Profesionales') 
+        ? XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']) as any[] 
+        : [];
+
       // Conteo de registros (restando encabezado)
-      const parsedPatients = XLSX.utils.sheet_to_json(workbook.Sheets['Pacientes']) as any[];
       const newCounts = {
-        pacientes: parsedPatients.length,
-        profesionales: XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']).length,
-        citas: XLSX.utils.sheet_to_json(workbook.Sheets['Citas']).length,
+        pacientes: parsedPatients.length || dbPatients.length,
+        profesionales: parsedProfessionals.length || dbDoctors.length,
+        citas: parsedAppointments.length,
       };
 
       // Extracción de datos muestra (Etapa 1)
       const samples = {
-        pacientes: parsedPatients.slice(0, 3),
-        profesionales: XLSX.utils.sheet_to_json(workbook.Sheets['Profesionales']).slice(0, 3) as any[],
-        citas: XLSX.utils.sheet_to_json(workbook.Sheets['Citas']).slice(0, 3) as any[],
+        pacientes: parsedPatients.length > 0 ? parsedPatients.slice(0, 3) : dbPatients.slice(0, 3),
+        profesionales: parsedProfessionals.length > 0 ? parsedProfessionals.slice(0, 3) : dbDoctors.slice(0, 3),
+        citas: parsedAppointments.slice(0, 3),
       };
 
-      const joined = joinExcelSheets(workbook);
+      const joined = joinExcelSheets(workbook, dbPatients, dbDoctors);
       setFullPatientsList(joined);
       setCounts(newCounts);
       setPreviewData(samples);
@@ -204,19 +301,117 @@ export default function Dashboard() {
     setIsSending(true);
     setSendProgress(0);
     
+    // Tomamos hasta 6 pacientes de la lista para mostrar en la consola en vivo. Si no hay, cargamos mock.
+    const sourceList = fullPatientsList.length > 0 ? fullPatientsList : [
+      { name: 'Carlos Humberto Pérez', phone: '300 123 4567', doctor: 'Dra. Carolina Gómez', specialty: 'Cardiología', documentType: 'CC' },
+      { name: 'Laura Camila Ruiz', phone: '315 987 6543', doctor: 'Dr. Alejandro Marín', specialty: 'Pediatría', documentType: 'CC' },
+      { name: 'Mateo Sebastián Sánchez', phone: '310 456 7890', doctor: 'Dra. Sandra Milena', specialty: 'Dermatología', documentType: 'TI' },
+      { name: 'Martha Cecilia Gómez', phone: '301 765 4321', doctor: 'Dr. Francisco Javier', specialty: 'Ginecología', documentType: 'CC' },
+      { name: 'Sofía Isabel Vergara', phone: '312 345 6789', doctor: 'Dr. Andrés Felipe', specialty: 'Ortopedia', documentType: 'CC' },
+      { name: 'Diego Alejandro Torres', phone: '320 111 2222', doctor: 'Dra. Patricia Ortiz', specialty: 'Oftalmología', documentType: 'CC' }
+    ];
+    
+    if (fullPatientsList.length === 0) {
+      setCounts(prev => ({ ...prev, citas: sourceList.length }));
+    }
+
+    const consoleList = sourceList.slice(0, 6).map((pat) => ({
+      ...pat,
+      step: 0, // 0: En cola, 1: Enviando WhatsApp, 2: Fallback/Fallo, 3: WhatsApp OK, 4: SMS OK, 5: Voz OK
+      statusText: 'En cola...',
+      channel: 'none'
+    }));
+    setLiveSendStatus(consoleList);
+
+    // Progreso del loader general
     const interval = setInterval(() => {
       setSendProgress(prev => {
-        if (prev >= 100) {
+        const nextProgress = prev + 4;
+        
+        // Actualizar el estado de la simulación de consola en base al progreso general
+        setLiveSendStatus(currentList => 
+          currentList.map((pat, idx) => {
+            // Distribuir el inicio de envíos según el índice
+            const triggerProgress = idx * 12;
+            if (nextProgress < triggerProgress) {
+              return { ...pat, step: 0, statusText: 'En cola...', channel: 'none' };
+            }
+
+            // Paciente 1: Envío directo por WhatsApp
+            if (idx === 0) {
+              if (nextProgress < triggerProgress + 15) {
+                return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
+              }
+              return { ...pat, step: 3, statusText: 'Enviado por WhatsApp ✓', channel: 'whatsapp' };
+            }
+
+            // Paciente 2: Falla WhatsApp, se envía por SMS de respaldo
+            if (idx === 1) {
+              if (nextProgress < triggerProgress + 10) {
+                return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
+              }
+              if (nextProgress < triggerProgress + 25) {
+                return { ...pat, step: 2, statusText: 'Fallo WhatsApp ➜ Iniciando SMS...', channel: 'whatsapp' };
+              }
+              return { ...pat, step: 4, statusText: 'Enviado por SMS (Respaldo) ✓', channel: 'sms' };
+            }
+
+            // Paciente 3: Envío directo por WhatsApp
+            if (idx === 2) {
+              if (nextProgress < triggerProgress + 15) {
+                return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
+              }
+              return { ...pat, step: 3, statusText: 'Enviado por WhatsApp ✓', channel: 'whatsapp' };
+            }
+
+            // Paciente 4: Falla WhatsApp y SMS, se hace llamada de voz sintética (IA Voice Synthesizer)
+            if (idx === 3) {
+              if (nextProgress < triggerProgress + 8) {
+                return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
+              }
+              if (nextProgress < triggerProgress + 18) {
+                return { ...pat, step: 2, statusText: 'Fallo WhatsApp ➜ Reintentando SMS...', channel: 'whatsapp' };
+              }
+              if (nextProgress < triggerProgress + 30) {
+                return { ...pat, step: 2, statusText: 'Fallo SMS ➜ Conmutando a llamada de voz...', channel: 'sms' };
+              }
+              return { ...pat, step: 5, statusText: 'Confirmado por Voz (IA Call) ✓', channel: 'voice' };
+            }
+
+            // Paciente 5: Envío directo por WhatsApp
+            if (idx === 4) {
+              if (nextProgress < triggerProgress + 15) {
+                return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
+              }
+              return { ...pat, step: 3, statusText: 'Enviado por WhatsApp ✓', channel: 'whatsapp' };
+            }
+
+            // Paciente 6: Falla WhatsApp, se envía por SMS de respaldo
+            if (idx === 5) {
+              if (nextProgress < triggerProgress + 10) {
+                return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
+              }
+              if (nextProgress < triggerProgress + 25) {
+                return { ...pat, step: 2, statusText: 'Fallo WhatsApp ➜ Conmutando SMS...', channel: 'whatsapp' };
+              }
+              return { ...pat, step: 4, statusText: 'Enviado por SMS (Respaldo) ✓', channel: 'sms' };
+            }
+
+            return pat;
+          })
+        );
+
+        if (nextProgress >= 100) {
           clearInterval(interval);
           setTimeout(() => {
             setIsSending(false);
             setStep(3);
-          }, 1000);
+          }, 1500);
           return 100;
         }
-        return prev + 5;
+        return nextProgress;
       });
-    }, 150);
+    }, 200);
   };
 
   const triggerFileUpload = () => {
@@ -463,27 +658,176 @@ export default function Dashboard() {
 
               
               {(step === 3 || isSending) && (
-                <div className='flex flex-col items-center py-20 text-center max-w-2xl mx-auto'>
+                <div className={`flex flex-col items-center py-6 text-center ${isSending ? 'max-w-6xl' : 'max-w-2xl'} mx-auto w-full`}>
                   {isSending ? (
-                    <>
-                      <div className='w-40 h-40 bg-white shadow-2xl shadow-sky-500/20 text-sky-500 rounded-[3.5rem] flex items-center justify-center mb-12 border-4 border-sky-50 relative overflow-hidden'>
-                        <motion.div 
-                          initial={{ height: 0 }}
-                          animate={{ height: `${sendProgress}%` }}
-                          className='absolute bottom-0 left-0 right-0 bg-sky-500/10 w-full'
-                        />
-                        <Send size={80} className='relative z-10 animate-bounce' />
+                    <div className="w-full flex flex-col items-center gap-10">
+                      {/* Overall Progress Header */}
+                      <div className="w-full bg-white/60 backdrop-blur-xl border border-blue-50/80 rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-sky-955/5 relative overflow-hidden text-left">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full -mr-20 -mt-20 blur-3xl" />
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                          <div className="space-y-2">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-600 rounded-full text-xs font-black uppercase tracking-wider">
+                              <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
+                              Transmisión en Vivo
+                            </span>
+                            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Consola de Envío Omnicanal</h2>
+                            <p className="text-slate-500 text-sm md:text-base font-medium max-w-xl">
+                              El motor de IA está despachando los recordatorios. Cuando un canal falla, el sistema conmuta automáticamente al siguiente recurso disponible.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-4 shrink-0 bg-slate-50/80 border border-slate-100 rounded-3xl p-4">
+                            <div className="text-right">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Progreso Global</p>
+                              <p className="text-2xl font-black text-slate-900">{sendProgress}%</p>
+                            </div>
+                            <div className="w-12 h-12 bg-sky-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/30">
+                              <Sparkles size={20} className="animate-spin duration-3000" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar & Counter */}
+                        <div className="mt-8 space-y-3 relative z-10">
+                          <div className="w-full bg-slate-100 h-5 rounded-full overflow-hidden shadow-inner border border-slate-200/50 p-0.5">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${sendProgress}%` }}
+                              className="h-full bg-gradient-to-r from-sky-400 via-sky-500 to-indigo-500 rounded-full shadow-md"
+                            />
+                          </div>
+                          <div className="flex justify-between items-center text-xs md:text-sm text-slate-500 font-bold px-1">
+                            <p>Procesando {Math.min(counts.citas, Math.round((sendProgress/100) * counts.citas))} de {counts.citas} recordatorios</p>
+                            <p className="text-sky-600 font-black animate-pulse">Líneas de comunicación activas</p>
+                          </div>
+                        </div>
                       </div>
-                      <h2 className='text-5xl font-black tracking-tight mb-6 text-slate-900'>Enviando...</h2>
-                      <div className='w-full bg-slate-200 h-4 rounded-full mb-4 overflow-hidden shadow-inner'>
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${sendProgress}%` }}
-                          className='h-full bg-sky-500 shadow-lg shadow-sky-500/50'
-                        />
+
+                      {/* Live Grid of Monitored Patients */}
+                      <div className="w-full text-left space-y-4">
+                        <div className="flex items-center justify-between px-2">
+                          <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                            <Activity className="text-emerald-500 animate-pulse" size={20} />
+                            Monitoreo de Canales (Pacientes Muestra)
+                          </h3>
+                          <span className="text-xs font-bold text-slate-400">Actualización en tiempo real</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {liveSendStatus.map((pat, idx) => {
+                            const styles = getCardStyle(pat.step, pat.statusText);
+                            return (
+                              <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: idx * 0.05 }}
+                                className={`bg-white/70 backdrop-blur-xl border-2 ${styles.border} ${styles.glow} rounded-[2rem] p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] relative group overflow-hidden min-h-[260px]`}
+                              >
+                                {/* Glow Accent inside card */}
+                                <div className={`absolute top-0 right-0 w-24 h-24 ${styles.glowColor} rounded-full -mr-8 -mt-8 blur-2xl transition-all duration-500 group-hover:scale-150`} />
+                                
+                                <div className="space-y-4 relative z-10">
+                                  {/* Card Header: Patient & Contact */}
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <h4 className="font-black text-slate-800 text-base leading-snug tracking-tight truncate max-w-[170px]">{pat.name}</h4>
+                                      <p className="text-slate-400 text-xs font-mono tracking-wider">{pat.phone}</p>
+                                    </div>
+                                    <span className="text-[10px] font-black px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg">
+                                      {pat.documentType || 'CC'}
+                                    </span>
+                                  </div>
+
+                                  {/* Doctor & Specialty Info */}
+                                  <div className="bg-slate-50/70 border border-slate-100 rounded-xl p-3 space-y-1">
+                                    <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold">
+                                      <User size={12} className="text-slate-400 shrink-0" />
+                                      <span className="truncate">{pat.doctor}</span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-bold pl-5 uppercase tracking-wider">
+                                      {pat.specialty || 'Consulta General'}
+                                    </div>
+                                  </div>
+
+                                  {/* Omnichannel Flow Visualization */}
+                                  <div className="py-2">
+                                    <div className="flex items-center justify-between px-2 relative">
+                                      {/* Connector Line 1 (WA to SMS) */}
+                                      <div className="absolute top-1/2 left-[18%] right-[55%] h-0.5 -translate-y-1/2 z-0">
+                                        <div className={`h-full w-full border-t-2 border-dashed transition-colors duration-300 ${
+                                          pat.step >= 2 && pat.step !== 3 ? 'border-amber-400' : 'border-slate-200'
+                                        }`} />
+                                      </div>
+
+                                      {/* Connector Line 2 (SMS to Voice) */}
+                                      <div className="absolute top-1/2 left-[55%] right-[18%] h-0.5 -translate-y-1/2 z-0">
+                                        <div className={`h-full w-full border-t-2 border-dashed transition-colors duration-300 ${
+                                          pat.step === 5 || (pat.step === 2 && pat.statusText.includes('llamada')) ? 'border-amber-400' : 'border-slate-200'
+                                        }`} />
+                                      </div>
+
+                                      {/* Node 1: WhatsApp */}
+                                      <div className="flex flex-col items-center gap-1 z-10">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                          pat.step === 1
+                                            ? 'bg-emerald-100 text-emerald-500 border-2 border-emerald-500 animate-pulse'
+                                            : pat.step === 3
+                                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                                            : pat.step >= 2
+                                            ? 'bg-rose-50 text-rose-500 border border-rose-200'
+                                            : 'bg-slate-50 text-slate-300 border border-slate-100'
+                                        }`}>
+                                          <MessageCircle size={14} />
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">WhatsApp</span>
+                                      </div>
+
+                                      {/* Node 2: SMS */}
+                                      <div className="flex flex-col items-center gap-1 z-10">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                          pat.step === 2 && pat.statusText.includes('SMS')
+                                            ? 'bg-sky-100 text-sky-500 border-2 border-sky-500 animate-pulse'
+                                            : pat.step === 4
+                                            ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                                            : pat.step === 5
+                                            ? 'bg-rose-50 text-rose-500 border border-rose-200'
+                                            : 'bg-slate-50 text-slate-300 border border-slate-100'
+                                        }`}>
+                                          <MessageSquare size={14} />
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">SMS</span>
+                                      </div>
+
+                                      {/* Node 3: Voice Call */}
+                                      <div className="flex flex-col items-center gap-1 z-10">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                          (pat.step === 2 && (pat.statusText.includes('llamada') || pat.statusText.includes('voz')))
+                                            ? 'bg-purple-100 text-purple-500 border-2 border-purple-500 animate-pulse'
+                                            : pat.step === 5
+                                            ? 'bg-purple-500 text-white shadow-md shadow-purple-500/20'
+                                            : 'bg-slate-50 text-slate-300 border border-slate-100'
+                                        }`}>
+                                          <PhoneCall size={14} />
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">Llamada IA</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Status Badge */}
+                                <div className="mt-4 pt-3 border-t border-slate-100/50 relative z-10">
+                                  <div className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black ${styles.badgeBg}`}>
+                                    <span className={`w-2 h-2 rounded-full ${styles.dotColor} shrink-0`} />
+                                    <span className="truncate">{pat.statusText}</span>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <p className='text-slate-500 text-xl font-medium'>Procesando {Math.round((sendProgress/100) * counts.citas)} de {counts.citas} recordatorios</p>
-                    </>
+                    </div>
                   ) : (
                     <>
                       <div className='w-40 h-40 bg-white shadow-2xl shadow-green-500/20 text-green-500 rounded-[3.5rem] flex items-center justify-center mb-12 border-4 border-green-50 transition-transform hover:scale-110'>      

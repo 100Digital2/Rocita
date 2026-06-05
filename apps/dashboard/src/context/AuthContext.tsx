@@ -8,6 +8,9 @@ interface User {
   name: string;
   role: string;
   clinicName?: string;
+  nit?: string;
+  address?: string;
+  phone?: string;
 }
 
 interface AuthContextType {
