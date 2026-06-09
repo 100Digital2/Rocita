@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   BarChart3,
+  Calendar,
   User,
   Bell,
   Settings,
@@ -17,7 +18,7 @@ import {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  activeTab: 'campanas' | 'reportes' | 'pacientes' | 'notificaciones' | 'configuracion';
+  activeTab: 'campanas' | 'reportes' | 'citas' | 'pacientes' | 'notificaciones' | 'configuracion';
   title: string;
   subtitle: string;
   headerExtra?: React.ReactNode;
@@ -107,6 +108,20 @@ export default function DashboardLayout({
             <BarChart3 size={20} /> Reportes
           </div>
           {activeTab === 'reportes' && <ChevronRight size={16} className="opacity-50" />}
+        </a>
+        <a
+          href="/citas"
+          onClick={() => isMobile && setIsMobileMenuOpen(false)}
+          className={`flex items-center justify-between group gap-3 p-4 rounded-[1.5rem] font-bold transition-all ${
+            activeTab === 'citas'
+              ? 'bg-sky-500 text-white shadow-xl shadow-sky-500/20'
+              : 'text-slate-500 hover:bg-sky-50 hover:text-sky-600'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Calendar size={20} /> Citas
+          </div>
+          {activeTab === 'citas' && <ChevronRight size={16} className="opacity-50" />}
         </a>
         <a
           href="/pacientes"

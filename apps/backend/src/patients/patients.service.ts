@@ -46,6 +46,19 @@ export class PatientsService {
     return this.patientRepository.save(patients);
   }
 
+  async update(id: number, patientData: Partial<Patient>): Promise<Patient> {
+    await this.patientRepository.update(id, patientData);
+    const updated = await this.patientRepository.findOne({ where: { id } });
+    if (!updated) {
+      throw new Error(`Patient with id ${id} not found`);
+    }
+    return updated;
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.patientRepository.delete(id);
+  }
+
   async clearAll(): Promise<void> {
     await this.patientRepository.clear();
   }
