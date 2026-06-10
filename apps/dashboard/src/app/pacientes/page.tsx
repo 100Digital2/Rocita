@@ -601,14 +601,14 @@ export default function PacientesPage() {
                 })}
               </div>
               
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-full text-xs font-black shadow-lg shadow-sky-500/20 transition-all flex items-center gap-2 active:scale-95 duration-200"
+                  className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-full text-xs font-black shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2 active:scale-95 duration-200"
                 >
                   <Plus size={14} /> Registrar Paciente
                 </button>
-                <div className="text-xs font-bold text-slate-400 bg-slate-50 px-4 py-2.5 rounded-full">
+                <div className="text-xs font-bold text-slate-400 bg-slate-50 px-4 py-2.5 rounded-full text-center">
                   Mostrando <span className="text-slate-800">{filteredPatients.length}</span> de <span className="text-slate-800">{patients.length}</span> registros
                 </div>
               </div>

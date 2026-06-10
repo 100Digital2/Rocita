@@ -220,10 +220,47 @@ export default function Dashboard() {
         if (res.ok) return res.json();
         throw new Error();
       })
-      .then(data => setDbDoctors(data))
+      .then(data => {
+        if (!data || data.length === 0) {
+          const local = localStorage.getItem('rocita_doctors');
+          if (local) {
+            const parsed = JSON.parse(local);
+            if (parsed && parsed.length > 0) {
+              setDbDoctors(parsed);
+              return;
+            }
+          }
+          const defaultDocs = [
+            { id: 1, name: 'Dra. Carolina Gómez', specialty: 'Cardiología', email: 'carolina.gomez@rocita.ai', phone: '+57 300 123 4567' },
+            { id: 2, name: 'Dr. Alejandro Restrepo', specialty: 'Dermatología', email: 'alejandro.restrepo@rocita.ai', phone: '+57 301 987 6543' },
+            { id: 3, name: 'Dr. Manuel Cabrera', specialty: 'Oftalmología', email: 'manuel.cabrera@rocita.ai', phone: '+57 312 456 7890' },
+            { id: 4, name: 'Dra. Sandra Ortiz', specialty: 'Pediatría', email: 'sandra.ortiz@rocita.ai', phone: '+57 320 654 3210' },
+            { id: 5, name: 'Dra. Diana Salazar', specialty: 'Ginecología', email: 'diana.salazar@rocita.ai', phone: '+57 301 222 3333' }
+          ];
+          setDbDoctors(defaultDocs);
+          localStorage.setItem('rocita_doctors', JSON.stringify(defaultDocs));
+        } else {
+          setDbDoctors(data);
+        }
+      })
       .catch(() => {
         const local = localStorage.getItem('rocita_doctors');
-        if (local) setDbDoctors(JSON.parse(local));
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed && parsed.length > 0) {
+            setDbDoctors(parsed);
+            return;
+          }
+        }
+        const defaultDocs = [
+          { id: 1, name: 'Dra. Carolina Gómez', specialty: 'Cardiología', email: 'carolina.gomez@rocita.ai', phone: '+57 300 123 4567' },
+          { id: 2, name: 'Dr. Alejandro Restrepo', specialty: 'Dermatología', email: 'alejandro.restrepo@rocita.ai', phone: '+57 301 987 6543' },
+          { id: 3, name: 'Dr. Manuel Cabrera', specialty: 'Oftalmología', email: 'manuel.cabrera@rocita.ai', phone: '+57 312 456 7890' },
+          { id: 4, name: 'Dra. Sandra Ortiz', specialty: 'Pediatría', email: 'sandra.ortiz@rocita.ai', phone: '+57 320 654 3210' },
+          { id: 5, name: 'Dra. Diana Salazar', specialty: 'Ginecología', email: 'diana.salazar@rocita.ai', phone: '+57 301 222 3333' }
+        ];
+        setDbDoctors(defaultDocs);
+        localStorage.setItem('rocita_doctors', JSON.stringify(defaultDocs));
       });
   }, [isAuthenticated, apiUrl]);
 
@@ -556,17 +593,17 @@ export default function Dashboard() {
 
               {step === 2 && (
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-                  <div className='lg:col-span-2 bg-white border border-blue-100 rounded-[3.5rem] p-12 shadow-2xl shadow-sky-900/5'>
-                    <h2 className='text-3xl font-black tracking-tight mb-8 flex items-center gap-4 text-slate-900'>
-                      <div className='w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center text-white'>
-                        <MessageSquare size={24} />
+                  <div className='lg:col-span-2 bg-white border border-blue-100 rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-12 shadow-2xl shadow-sky-900/5'>
+                    <h2 className='text-2xl md:text-3xl font-black tracking-tight mb-6 md:mb-8 flex items-center gap-3 md:gap-4 text-slate-900'>
+                      <div className='w-10 h-10 md:w-12 md:h-12 bg-sky-500 rounded-xl md:rounded-2xl flex items-center justify-center text-white'>
+                        <MessageSquare size={20} className="md:w-6 md:h-6" />
                       </div>
                       Cuerpo del Mensaje
                     </h2>
                     
-                    <div className='mb-8'>
-                      <p className='text-xs font-black uppercase tracking-widest text-slate-400 mb-4'>Variables de Salud</p>
-                      <div className='flex flex-wrap gap-3'>
+                    <div className='mb-6 md:mb-8'>
+                      <p className='text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 md:mb-4'>Variables de Salud</p>
+                      <div className='flex flex-wrap gap-2 md:gap-3'>
                         {[
                           { id: '{nombre_paciente}', label: 'Paciente', icon: <User size={14} /> },
                           { id: '{nombre_doctor}', label: 'Doctor', icon: <Users size={14} /> },
@@ -576,44 +613,44 @@ export default function Dashboard() {
                           <button
                             key={v.id}
                             onClick={() => insertVariable(v.id)}
-                            className='flex items-center gap-2 px-5 py-3 bg-sky-50 text-sky-600 rounded-[1.25rem] text-sm font-black hover:bg-sky-500 hover:text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-sm'
+                            className='flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-3 bg-sky-50 text-sky-600 rounded-[1rem] md:rounded-[1.25rem] text-xs md:text-sm font-black hover:bg-sky-500 hover:text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-sm'
                           >
                             {v.icon} {v.label}
                           </button>
                         ))}
                       </div>
                     </div>
-
+ 
                     <div className='relative'>
                       <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder='Redacta tu mensaje de recordatorio aquí...'
-                        className='w-full h-80 p-8 bg-slate-50 border-2 border-transparent focus:border-sky-500 focus:bg-white rounded-[2.5rem] outline-none transition-all duration-300 focus:ring-4 focus:ring-sky-500/20 font-sans text-lg text-slate-800 leading-relaxed shadow-inner'
+                        className='w-full h-80 p-5 md:p-8 bg-slate-50 border-2 border-transparent focus:border-sky-500 focus:bg-white rounded-[1.5rem] md:rounded-[2.5rem] outline-none transition-all duration-300 focus:ring-4 focus:ring-sky-500/20 font-sans text-base md:text-lg text-slate-800 leading-relaxed shadow-inner'
                       />
-                      <div className='absolute bottom-6 right-6 px-4 py-2 bg-white/80 backdrop-blur rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 border border-slate-100 shadow-sm'>
+                      <div className='absolute bottom-6 right-6 px-3 py-1.5 bg-white/80 backdrop-blur rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 border border-slate-100 shadow-sm'>
                         {message.length} caracteres
                       </div>
                     </div>
-
-                    <div className='flex items-center justify-between mt-10'>
-                      <button onClick={() => setStep(1)} className='px-8 py-4 text-slate-400 font-black hover:text-slate-800 hover:scale-105 active:scale-95 transition-all duration-200'>
+ 
+                    <div className='flex items-center justify-between mt-8 md:mt-10'>
+                      <button onClick={() => setStep(1)} className='px-6 md:px-8 py-3 md:py-4 text-slate-400 font-black hover:text-slate-800 hover:scale-105 active:scale-95 transition-all duration-200 text-sm md:text-base'>
                         Atrás
                       </button>
                       <button
                         onClick={handleSend}
-                        className='bg-sky-500 text-white px-12 py-4 rounded-[1.5rem] font-black text-lg hover:scale-105 active:scale-95 hover:shadow-sky-500/40 transition-all duration-200 shadow-xl shadow-sky-500/30 flex items-center gap-3'
+                        className='bg-sky-500 text-white px-8 md:px-12 py-3 md:py-4 rounded-[1.25rem] md:rounded-[1.5rem] font-black text-sm md:text-lg hover:scale-105 active:scale-95 hover:shadow-sky-500/40 transition-all duration-200 shadow-xl shadow-sky-500/30 flex items-center gap-2 md:gap-3'
                       >
-                        Programar Envío <Send size={20} />
+                        Programar Envío <Send size={18} className="md:w-5 md:h-5" />
                       </button>
                     </div>
                   </div>
-
-                  <div className='space-y-8'>
-                    <div className='bg-slate-900 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden group'>
+ 
+                  <div className='space-y-6 md:space-y-8'>
+                    <div className='bg-slate-900 rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-10 text-white shadow-2xl relative overflow-hidden group'>
                       <div className='absolute -right-10 -top-10 w-40 h-40 bg-sky-500/20 rounded-full blur-3xl'></div>
-                      <h3 className='text-xl font-black mb-6 relative z-10'>Vista Previa</h3>
-                      <div className='bg-slate-800 rounded-[2.5rem] p-6 relative z-10 border border-slate-700/50'>
+                      <h3 className='text-lg md:text-xl font-black mb-4 md:mb-6 relative z-10'>Vista Previa</h3>
+                      <div className='bg-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] p-5 md:p-6 relative z-10 border border-slate-700/50'>
                         <div className='flex items-center gap-3 mb-4'>
                           <div className='w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-[10px]'>
                             R
@@ -634,21 +671,21 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-
-                    <div className='bg-white border border-blue-100 rounded-[3.5rem] p-10 shadow-lg shadow-sky-900/5'>
-                      <h3 className='font-black text-lg mb-4 text-slate-900'>Resumen de Datos</h3>
-                      <div className='space-y-4'>
-                        <div className='flex items-center justify-between p-4 bg-slate-50 rounded-2xl'>
+ 
+                    <div className='bg-white border border-blue-100 rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-10 shadow-lg shadow-sky-900/5'>
+                      <h3 className='font-black text-base md:text-lg mb-4 text-slate-900'>Resumen de Datos</h3>
+                      <div className='space-y-3 md:space-y-4'>
+                        <div className='flex items-center justify-between p-3.5 md:p-4 bg-slate-50 rounded-2xl'>
                           <p className='text-xs font-bold text-slate-500'>Pacientes</p>
-                          <p className='font-black text-sky-600'>{counts.pacientes}</p>
+                          <p className='font-black text-sky-600 text-sm md:text-base'>{counts.pacientes}</p>
                         </div>
-                        <div className='flex items-center justify-between p-4 bg-slate-50 rounded-2xl'>
+                        <div className='flex items-center justify-between p-3.5 md:p-4 bg-slate-50 rounded-2xl'>
                           <p className='text-xs font-bold text-slate-500'>Profesionales</p>
-                          <p className='font-black text-sky-600'>{counts.profesionales}</p>
+                          <p className='font-black text-sky-600 text-sm md:text-base'>{counts.profesionales}</p>
                         </div>
-                        <div className='flex items-center justify-between p-4 bg-sky-50 rounded-2xl border border-sky-200'>
+                        <div className='flex items-center justify-between p-3.5 md:p-4 bg-sky-50 rounded-2xl border border-sky-200'>
                           <p className='text-xs font-bold text-sky-700'>Citas Hoy</p>
-                          <p className='font-black text-sky-600'>{counts.citas}</p>
+                          <p className='font-black text-sky-600 text-sm md:text-base'>{counts.citas}</p>
                         </div>
                       </div>
                     </div>
@@ -910,7 +947,7 @@ export default function Dashboard() {
               </div>
 
               {/* Tabs Navigation */}
-              <div className="flex items-center border-b border-slate-100 pb-2 gap-2">
+              <div className="flex items-center border-b border-slate-100 pb-2 gap-2 overflow-x-auto scrollbar-none flex-nowrap md:flex-wrap">
                 {[
                   { id: 'pacientes', label: 'Pacientes', count: counts.pacientes, icon: <User size={16} /> },
                   { id: 'profesionales', label: 'Profesionales', count: counts.profesionales, icon: <Users size={16} /> },
@@ -919,7 +956,7 @@ export default function Dashboard() {
                   <button
                     key={tab.id}
                     onClick={() => setActivePreviewTab(tab.id as any)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-black transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-black transition-all whitespace-nowrap shrink-0 ${
                       activePreviewTab === tab.id
                         ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
                         : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'

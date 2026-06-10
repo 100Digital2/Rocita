@@ -98,7 +98,7 @@ export default function ReportesPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className='bg-white p-8 rounded-[2.5rem] border border-blue-100 shadow-lg shadow-sky-900/5 group hover:scale-[1.02] transition-all'
+                className='bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-blue-100 shadow-lg shadow-sky-900/5 group hover:scale-[1.02] transition-all'
               >
                 <div className='flex items-start justify-between mb-4'>
                   <div className='w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform'>
@@ -118,26 +118,26 @@ export default function ReportesPage() {
 
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
             {/* Chart Simulation */}
-            <div className='lg:col-span-2 bg-white rounded-[3.5rem] p-12 border border-blue-100 shadow-2xl shadow-sky-900/5 relative overflow-hidden'>
-              <div className='flex items-center justify-between mb-12'>
+            <div className='lg:col-span-2 bg-white rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-12 border border-blue-100 shadow-2xl shadow-sky-900/5 relative overflow-hidden'>
+              <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12'>
                 <div>
-                  <h3 className='text-2xl font-black tracking-tight'>Eficiencia de Confirmación</h3>
-                  <p className='text-sm text-slate-400 font-medium'>Comparativa de los últimos 7 días</p>
+                  <h3 className='text-xl md:text-2xl font-black tracking-tight'>Eficiencia de Confirmación</h3>
+                  <p className='text-xs md:text-sm text-slate-400 font-medium'>Comparativa de los últimos 7 días</p>
                 </div>
-                <div className='flex items-center gap-4 text-xs font-black'>
-                  <div className='flex items-center gap-2'>
-                    <div className='w-3 h-3 bg-sky-500 rounded-full'></div>
+                <div className='flex items-center gap-4 text-[10px] md:text-xs font-black'>
+                  <div className='flex items-center gap-1.5'>
+                    <div className='w-2.5 h-2.5 bg-sky-500 rounded-full'></div>
                     Confirmadas
                   </div>
-                  <div className='flex items-center gap-2'>
-                    <div className='w-3 h-3 bg-slate-200 rounded-full'></div>
+                  <div className='flex items-center gap-1.5'>
+                    <div className='w-2.5 h-2.5 bg-slate-200 rounded-full'></div>
                     Pendientes
                   </div>
                 </div>
               </div>
 
               {/* Fake Bars */}
-              <div className='flex items-end justify-between h-64 gap-4 px-4'>
+              <div className='flex items-end justify-between h-64 gap-2 md:gap-4 px-1 md:px-4'>
                 {[
                   { d: 'Lun', h: 80, p: 20 },
                   { d: 'Mar', h: 65, p: 35 },
@@ -147,35 +147,35 @@ export default function ReportesPage() {
                   { d: 'Sab', h: 95, p: 5 },
                   { d: 'Dom', h: 40, p: 60 }
                 ].map((bar, i) => (
-                  <div key={i} className='flex-1 flex flex-col items-center gap-4'>
-                    <div className='w-full max-w-[40px] flex flex-col-reverse h-full rounded-2xl overflow-hidden bg-slate-50'>
+                  <div key={i} className='flex-1 flex flex-col items-center gap-3 md:gap-4'>
+                    <div className='w-full max-w-[24px] sm:max-w-[40px] flex flex-col-reverse h-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-50'>
                       <motion.div 
                         initial={{ height: 0 }}
                         animate={{ height: `${bar.h}%` }}
                         transition={{ duration: 1, delay: i * 0.1 }}
                         className='bg-sky-500 w-full relative group'
                       >
-                        <div className='absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity'>
+                        <div className='absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10'>
                           {bar.h}%
                         </div>
                       </motion.div>
                     </div>
-                    <span className='text-[10px] font-black text-slate-400 uppercase'>{bar.d}</span>
+                    <span className='text-[8px] sm:text-[10px] font-black text-slate-400 uppercase'>{bar.d}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Side Info */}
-            <div className='space-y-8'>
-              <div className='bg-slate-900 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden'>
+            <div className='space-y-6 md:space-y-8'>
+              <div className='bg-slate-900 rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-10 text-white shadow-2xl relative overflow-hidden'>
                 <div className='absolute top-0 right-0 w-32 h-32 bg-sky-500/20 rounded-full blur-3xl'></div>
-                <h3 className='text-xl font-black mb-6 flex items-center gap-3'>
+                <h3 className='text-lg md:text-xl font-black mb-4 md:mb-6 flex items-center gap-3'>
                   <Activity size={20} className='text-sky-500' /> Estado Operativo
                 </h3>
-                <div className='space-y-6'>
+                <div className='space-y-4 md:space-y-6'>
                   <div>
-                    <div className='flex justify-between text-xs font-bold mb-2'>
+                    <div className='flex justify-between text-[11px] md:text-xs font-bold mb-2'>
                       <span>Mensajes Enviados Hoy</span>
                       <span className='text-sky-400'>2,142 / 5,000</span>
                     </div>
@@ -184,7 +184,7 @@ export default function ReportesPage() {
                     </div>
                   </div>
                   <div>
-                    <div className='flex justify-between text-xs font-bold mb-2'>
+                    <div className='flex justify-between text-[11px] md:text-xs font-bold mb-2'>
                       <span>Capacidad de Respuesta IA</span>
                       <span className='text-emerald-400'>98.4%</span>
                     </div>
@@ -193,26 +193,26 @@ export default function ReportesPage() {
                     </div>
                   </div>
                 </div>
-                <div className='mt-10 p-4 bg-sky-500/10 border border-sky-500/20 rounded-2xl'>
-                  <p className='text-[10px] font-medium leading-relaxed text-sky-100/70'>
+                <div className='mt-8 md:mt-10 p-4 bg-sky-500/10 border border-sky-500/20 rounded-2xl'>
+                  <p className='text-[9px] md:text-[10px] font-medium leading-relaxed text-sky-100/70'>
                     Rocita está detectando un patrón de inasistencia en Pediatría los jueves. Recomendamos adelantar recordatorios 4h.
                   </p>
                 </div>
               </div>
 
-              <div className='bg-white border border-blue-100 rounded-[3.5rem] p-10 shadow-lg shadow-sky-900/5'>
-                <h3 className='font-black text-lg mb-6'>Recientes</h3>
-                <div className='space-y-6'>
+              <div className='bg-white border border-blue-100 rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-10 shadow-lg shadow-sky-900/5'>
+                <h3 className='font-black text-base md:text-lg mb-4 md:mb-6'>Recientes</h3>
+                <div className='space-y-4 md:space-y-6'>
                   {[1, 2, 3].map(i => (
-                    <div key={i} className='flex items-center gap-4'>
-                      <div className='w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400'>
-                        <Users size={18} />
+                    <div key={i} className='flex items-center gap-3 md:gap-4'>
+                      <div className='w-9 h-9 md:w-10 md:h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 shrink-0'>
+                        <Users size={16} />
                       </div>
-                      <div className='flex-1'>
-                        <p className='text-xs font-black'>Hospital Regional Norte</p>
-                        <p className='text-[10px] text-slate-400'>Campaña completada · Hace 2h</p>
+                      <div className='flex-1 min-w-0'>
+                        <p className='text-xs font-black truncate'>Hospital Regional Norte</p>
+                        <p className='text-[9px] md:text-[10px] text-slate-400'>Campaña completada · Hace 2h</p>
                       </div>
-                      <ChevronRight size={16} className='text-slate-300' />
+                      <ChevronRight size={14} className='text-slate-300 shrink-0' />
                     </div>
                   ))}
                 </div>

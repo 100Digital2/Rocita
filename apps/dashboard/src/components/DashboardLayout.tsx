@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
-  LayoutDashboard,
+  Upload,
   BarChart3,
   Calendar,
   User,
+  Stethoscope,
   Bell,
   Settings,
   LogOut,
@@ -18,7 +19,7 @@ import {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  activeTab: 'campanas' | 'reportes' | 'citas' | 'pacientes' | 'notificaciones' | 'configuracion';
+  activeTab: 'campanas' | 'reportes' | 'citas' | 'pacientes' | 'medicos' | 'notificaciones' | 'configuracion';
   title: string;
   subtitle: string;
   headerExtra?: React.ReactNode;
@@ -82,34 +83,6 @@ export default function DashboardLayout({
       <nav className="flex flex-col gap-2">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 px-4">Principal</p>
         <a
-          href="/"
-          onClick={() => isMobile && setIsMobileMenuOpen(false)}
-          className={`flex items-center justify-between group gap-3 p-4 rounded-[1.5rem] font-bold transition-all ${
-            activeTab === 'campanas'
-              ? 'bg-sky-500 text-white shadow-xl shadow-sky-500/20'
-              : 'text-slate-500 hover:bg-sky-50 hover:text-sky-600'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <LayoutDashboard size={20} /> Campañas
-          </div>
-          {activeTab === 'campanas' && <ChevronRight size={16} className="opacity-50" />}
-        </a>
-        <a
-          href="/reportes"
-          onClick={() => isMobile && setIsMobileMenuOpen(false)}
-          className={`flex items-center justify-between group gap-3 p-4 rounded-[1.5rem] font-bold transition-all ${
-            activeTab === 'reportes'
-              ? 'bg-sky-500 text-white shadow-xl shadow-sky-500/20'
-              : 'text-slate-500 hover:bg-sky-50 hover:text-sky-600'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <BarChart3 size={20} /> Reportes
-          </div>
-          {activeTab === 'reportes' && <ChevronRight size={16} className="opacity-50" />}
-        </a>
-        <a
           href="/citas"
           onClick={() => isMobile && setIsMobileMenuOpen(false)}
           className={`flex items-center justify-between group gap-3 p-4 rounded-[1.5rem] font-bold transition-all ${
@@ -136,6 +109,48 @@ export default function DashboardLayout({
             <User size={20} /> Pacientes
           </div>
           {activeTab === 'pacientes' && <ChevronRight size={16} className="opacity-50" />}
+        </a>
+        <a
+          href="/medicos"
+          onClick={() => isMobile && setIsMobileMenuOpen(false)}
+          className={`flex items-center justify-between group gap-3 p-4 rounded-[1.5rem] font-bold transition-all ${
+            activeTab === 'medicos'
+              ? 'bg-sky-500 text-white shadow-xl shadow-sky-500/20'
+              : 'text-slate-500 hover:bg-sky-50 hover:text-sky-600'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Stethoscope size={20} /> Médicos
+          </div>
+          {activeTab === 'medicos' && <ChevronRight size={16} className="opacity-50" />}
+        </a>
+        <a
+          href="/reportes"
+          onClick={() => isMobile && setIsMobileMenuOpen(false)}
+          className={`flex items-center justify-between group gap-3 p-4 rounded-[1.5rem] font-bold transition-all ${
+            activeTab === 'reportes'
+              ? 'bg-sky-500 text-white shadow-xl shadow-sky-500/20'
+              : 'text-slate-500 hover:bg-sky-50 hover:text-sky-600'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <BarChart3 size={20} /> Reportes
+          </div>
+          {activeTab === 'reportes' && <ChevronRight size={16} className="opacity-50" />}
+        </a>
+        <a
+          href="/"
+          onClick={() => isMobile && setIsMobileMenuOpen(false)}
+          className={`flex items-center justify-between group gap-3 p-4 rounded-[1.5rem] font-bold transition-all ${
+            activeTab === 'campanas'
+              ? 'bg-sky-500 text-white shadow-xl shadow-sky-500/20'
+              : 'text-slate-500 hover:bg-sky-50 hover:text-sky-600'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Upload size={20} /> Cargar Datos
+          </div>
+          {activeTab === 'campanas' && <ChevronRight size={16} className="opacity-50" />}
         </a>
         <a
           href="/notificaciones"
@@ -247,7 +262,21 @@ export default function DashboardLayout({
 
           <div className="flex items-center gap-4 md:gap-6">
             {headerExtra}
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center font-bold text-slate-600 text-sm md:text-base shrink-0">
+            <div 
+              onClick={() => router.push('/configuracion')}
+              className="hidden md:flex flex-col items-end text-right cursor-pointer group/clinic select-none"
+              title="Ir a Configuración Clínica"
+            >
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover/clinic:text-sky-500 transition-colors">Institución</span>
+              <span className="text-sm font-black text-slate-800 tracking-tight group-hover/clinic:text-sky-500 transition-colors">
+                {user?.clinicName || 'Clínica Principal'}
+              </span>
+            </div>
+            <button
+              onClick={() => router.push('/configuracion')}
+              className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center font-bold text-slate-600 text-sm md:text-base shrink-0 cursor-pointer hover:scale-105 active:scale-95 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+              title="Ir a Configuración Clínica"
+            >
               {user?.name
                 ? user.name
                     .split(' ')
@@ -256,7 +285,7 @@ export default function DashboardLayout({
                     .slice(0, 2)
                     .toUpperCase()
                 : 'JJ'}
-            </div>
+            </button>
           </div>
         </header>
 

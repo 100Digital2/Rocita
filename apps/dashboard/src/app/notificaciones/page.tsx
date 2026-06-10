@@ -195,7 +195,7 @@ export default function NotificacionesPage() {
             {/* Action Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               {/* Category Filters */}
-              <div className="flex items-center flex-wrap gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-nowrap md:flex-wrap pb-2 md:pb-0 w-full sm:w-auto">
                 {[
                   { id: 'todas', label: 'Todas', count: notifications.length },
                   { id: 'confirmacion', label: 'Confirmaciones', count: notifications.filter(n => n.type === 'confirmacion').length },
@@ -205,7 +205,7 @@ export default function NotificacionesPage() {
                   <button
                     key={item.id}
                     onClick={() => setFilter(item.id as any)}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 duration-200 ${
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black transition-all active:scale-95 duration-200 whitespace-nowrap shrink-0 ${
                       filter === item.id 
                         ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' 
                         : 'bg-white hover:bg-slate-50 text-slate-500 border border-blue-100 shadow-sm'
@@ -299,7 +299,7 @@ export default function NotificacionesPage() {
                             )}
                           </div>
 
-                          <div className="flex items-center md:flex-col items-end gap-3 md:gap-1.5 self-start md:self-auto shrink-0">
+                          <div className="flex items-center md:flex-col md:items-end gap-3 md:gap-1.5 self-start md:self-auto shrink-0">
                             <span className="text-[10px] font-bold text-slate-400">{notif.time}</span>
                             <button
                               onClick={(e) => {
@@ -320,7 +320,7 @@ export default function NotificacionesPage() {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="bg-white border border-blue-50 rounded-[3rem] p-16 text-center text-slate-400 shadow-sm"
+                    className="bg-white border border-blue-50 rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 text-center text-slate-400 shadow-sm"
                   >
                     <div className="w-16 h-16 bg-sky-50 text-sky-400 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
                       <Bell size={24} />

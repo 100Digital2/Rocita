@@ -45,21 +45,13 @@ export default function ConfiguracionPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ia' | 'canales' | 'plantillas' | 'perfil' | 'medicos'>('ia');
+  const [activeTab, setActiveTab] = useState<'ia' | 'canales' | 'plantillas' | 'perfil'>('ia');
   
   // Toast notifications
   const [toast, setToast] = useState<Toast>({ show: false, message: '', type: 'success' });
 
   // API URL de la Demo
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
-  // Estados del Módulo de Médicos
-  const [doctors, setDoctors] = useState<any[]>([]);
-  const [newDoctorName, setNewDoctorName] = useState('');
-  const [newDoctorSpecialty, setNewDoctorSpecialty] = useState('');
-  const [newDoctorEmail, setNewDoctorEmail] = useState('');
-  const [newDoctorPhone, setNewDoctorPhone] = useState('');
-  const [isSavingDoctor, setIsSavingDoctor] = useState(false);
 
   // 1. Perfil de la Institución
   const [clinicName, setClinicName] = useState('Salud Eficiente');
@@ -153,127 +145,7 @@ export default function ConfiguracionPage() {
     }
   }, [router, user]);
 
-  // Fetch doctors from backend (with offline local storage fallback)
-  const fetchDoctors = async () => {
-    const token = localStorage.getItem('rocita_token');
-    try {
-      const res = await fetch(`${apiUrl}/doctors`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDoctors(data);
-      } else {
-        throw new Error('No se pudieron obtener los médicos del backend');
-      }
-    } catch (err) {
-      console.warn('Backend offline o error al obtener médicos, cargando de localStorage...', err);
-      const offlineDoctors = localStorage.getItem('rocita_doctors');
-      if (offlineDoctors) {
-        setDoctors(JSON.parse(offlineDoctors));
-      } else {
-        const defaultDoctors = [
-          { id: 1, name: 'Dra. Carolina Gómez', specialty: 'Cardiología', email: 'carolina.gomez@rocita.ai', phone: '+57 300 123 4567' },
-          { id: 2, name: 'Dr. Alejandro Ruiz', specialty: 'Pediatría', email: 'alejandro.ruiz@rocita.ai', phone: '+57 301 987 6543' },
-        ];
-        setDoctors(defaultDoctors);
-        localStorage.setItem('rocita_doctors', JSON.stringify(defaultDoctors));
-      }
-    }
-  };
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchDoctors();
-    }
-  }, [isAuthenticated]);
-
-  const handleAddDoctor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDoctorName || !newDoctorSpecialty || !newDoctorEmail || !newDoctorPhone) {
-      showToastNotification('Todos los campos del médico son requeridos.', 'warning');
-      return;
-    }
-
-    setIsSavingDoctor(true);
-    const token = localStorage.getItem('rocita_token');
-
-    const doctorPayload = {
-      name: newDoctorName,
-      specialty: newDoctorSpecialty,
-      email: newDoctorEmail,
-      phone: newDoctorPhone,
-    };
-
-    try {
-      const res = await fetch(`${apiUrl}/doctors`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(doctorPayload),
-      });
-
-      if (res.ok) {
-        showToastNotification('Médico registrado exitosamente.', 'success');
-        fetchDoctors();
-        // Reset form
-        setNewDoctorName('');
-        setNewDoctorSpecialty('');
-        setNewDoctorEmail('');
-        setNewDoctorPhone('');
-      } else {
-        throw new Error('Error al registrar médico');
-      }
-    } catch (err) {
-      console.warn('Backend offline, registrando médico en modo demo (local)...', err);
-      const newLocalDoctor = {
-        id: Date.now(),
-        ...doctorPayload,
-      };
-      const updatedDoctors = [...doctors, newLocalDoctor];
-      setDoctors(updatedDoctors);
-      localStorage.setItem('rocita_doctors', JSON.stringify(updatedDoctors));
-      showToastNotification('Médico registrado localmente (Modo Demo).', 'success');
-
-      // Reset form
-      setNewDoctorName('');
-      setNewDoctorSpecialty('');
-      setNewDoctorEmail('');
-      setNewDoctorPhone('');
-    } finally {
-      setIsSavingDoctor(false);
-    }
-  };
-
-  const handleDeleteDoctor = async (id: number) => {
-    const token = localStorage.getItem('rocita_token');
-
-    try {
-      const res = await fetch(`${apiUrl}/doctors/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        showToastNotification('Médico eliminado exitosamente.', 'success');
-        fetchDoctors();
-      } else {
-        throw new Error('Error al eliminar médico');
-      }
-    } catch (err) {
-      console.warn('Backend offline, eliminando médico de forma local...', err);
-      const updatedDoctors = doctors.filter(doc => doc.id !== id);
-      setDoctors(updatedDoctors);
-      localStorage.setItem('rocita_doctors', JSON.stringify(updatedDoctors));
-      showToastNotification('Médico eliminado localmente (Modo Demo).', 'success');
-    }
-  };
 
   const showToastNotification = (message: string, type: 'success' | 'info' | 'warning' = 'success') => {
     setToast({ show: true, message, type });
@@ -360,13 +232,13 @@ export default function ConfiguracionPage() {
       <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
           
           {/* Left panel: Config controls */}
-          <div className="flex-1 overflow-y-auto p-12 space-y-8 border-r border-blue-50 bg-slate-50/30">
+          <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 border-r border-blue-50 bg-slate-50/30">
             
             {/* Tabs selector */}
-            <div className="flex items-center gap-2 p-1.5 bg-white border border-blue-100 rounded-3xl shadow-sm">
+            <div className="flex items-center gap-2 p-1.5 bg-white border border-blue-100 rounded-3xl shadow-sm overflow-x-auto scrollbar-none flex-nowrap md:flex-wrap">
               <button
                 onClick={() => setActiveTab('ia')}
-                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
                   activeTab === 'ia' ? 'bg-sky-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                 }`}
               >
@@ -375,7 +247,7 @@ export default function ConfiguracionPage() {
               </button>
               <button
                 onClick={() => setActiveTab('canales')}
-                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
                   activeTab === 'canales' ? 'bg-sky-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                 }`}
               >
@@ -384,25 +256,17 @@ export default function ConfiguracionPage() {
               </button>
               <button
                 onClick={() => setActiveTab('plantillas')}
-                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
                   activeTab === 'plantillas' ? 'bg-sky-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                 }`}
               >
                 <FileText size={14} />
                 Plantillas
               </button>
-              <button
-                onClick={() => setActiveTab('medicos')}
-                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                  activeTab === 'medicos' ? 'bg-sky-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`}
-              >
-                <User size={14} />
-                Médicos
-              </button>
+
               <button
                 onClick={() => setActiveTab('perfil')}
-                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
                   activeTab === 'perfil' ? 'bg-sky-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                 }`}
               >
@@ -412,7 +276,7 @@ export default function ConfiguracionPage() {
             </div>
 
             {/* Tab contents wrapper */}
-            <div className="bg-white rounded-[2.5rem] p-8 border border-blue-100/50 shadow-sm min-h-[460px] flex flex-col justify-between">
+            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-blue-100/50 shadow-sm min-h-[460px] flex flex-col justify-between">
               
               {/* TAB 1: Motor de IA Rocita */}
               {activeTab === 'ia' && (
@@ -823,136 +687,7 @@ export default function ConfiguracionPage() {
                 </motion.div>
               )}
 
-              {/* TAB 5: Gestión de Médicos */}
-              {activeTab === 'medicos' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-6"
-                >
-                  <div>
-                    <h3 className="text-md font-black text-slate-900 flex items-center gap-2">
-                      <User size={18} className="text-sky-500" /> Directorio de Médicos Especialistas
-                    </h3>
-                    <p className="text-xs text-slate-400 font-bold mt-1">
-                      Agrega o elimina los especialistas que prestan servicio en tu IPS para asignar citas en el sistema.
-                    </p>
-                  </div>
 
-                  <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
-                    {/* Formulario de registro (2/5) */}
-                    <form onSubmit={handleAddDoctor} className="xl:col-span-2 space-y-4 bg-slate-50/50 p-6 rounded-3xl border border-slate-100/80">
-                      <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Registrar Médico</h4>
-                      
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Nombre Completo</label>
-                        <input
-                          type="text"
-                          required
-                          value={newDoctorName}
-                          onChange={(e) => setNewDoctorName(e.target.value)}
-                          placeholder="Dr. David Jaramillo"
-                          className="w-full bg-white border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 transition-all font-bold text-slate-800"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Especialidad</label>
-                        <input
-                          type="text"
-                          required
-                          value={newDoctorSpecialty}
-                          onChange={(e) => setNewDoctorSpecialty(e.target.value)}
-                          placeholder="Cardiología / Pediatría"
-                          className="w-full bg-white border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 transition-all font-bold text-slate-800"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Correo Electrónico</label>
-                        <input
-                          type="email"
-                          required
-                          value={newDoctorEmail}
-                          onChange={(e) => setNewDoctorEmail(e.target.value)}
-                          placeholder="david.jaramillo@clinica.com"
-                          className="w-full bg-white border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 transition-all font-bold text-slate-800"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Teléfono Móvil</label>
-                        <input
-                          type="text"
-                          required
-                          value={newDoctorPhone}
-                          onChange={(e) => setNewDoctorPhone(e.target.value)}
-                          placeholder="+57 312 345 6789"
-                          className="w-full bg-white border border-slate-200 rounded-2xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 transition-all font-bold text-slate-800"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={isSavingDoctor}
-                        className="w-full mt-2 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl text-xs font-black shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-75"
-                      >
-                        {isSavingDoctor ? (
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        ) : (
-                          <>
-                            <Plus size={14} /> Registrar Especialista
-                          </>
-                        )}
-                      </button>
-                    </form>
-
-                    {/* Listado de Médicos (3/5) */}
-                    <div className="xl:col-span-3 space-y-4">
-                      <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">Profesionales Activos ({doctors.length})</h4>
-                      
-                      <div className="max-h-[360px] overflow-y-auto space-y-3 pr-2">
-                        {doctors.length === 0 ? (
-                          <div className="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-3xl">
-                            <p className="text-xs text-slate-400 font-bold">No hay médicos registrados.</p>
-                            <p className="text-[10px] text-slate-400 mt-1 font-medium">Usa el formulario lateral para agregar tu primer especialista.</p>
-                          </div>
-                        ) : (
-                          doctors.map((doctor) => (
-                            <div 
-                              key={doctor.id} 
-                              className="bg-white border border-slate-100 hover:border-slate-200 p-4 rounded-2xl shadow-sm flex items-center justify-between gap-4 group transition-all"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-black text-sm shrink-0 font-bold">
-                                  {doctor.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
-                                </div>
-                                <div className="min-w-0">
-                                  <h5 className="font-extrabold text-xs text-slate-800 truncate">{doctor.name}</h5>
-                                  <p className="text-[10px] font-black text-sky-500 uppercase tracking-wider mt-0.5">{doctor.specialty}</p>
-                                  <div className="flex items-center gap-3 mt-1.5 text-[9px] font-bold text-slate-400">
-                                    <span className="truncate">{doctor.email}</span>
-                                    <span>•</span>
-                                    <span>{doctor.phone}</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <button
-                                onClick={() => handleDeleteDoctor(doctor.id)}
-                                className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90 shrink-0"
-                                title="Eliminar médico"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
 
               {/* Guardar Cambios Footer inside box for mobile */}
               <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-end shrink-0 md:hidden">
@@ -969,7 +704,7 @@ export default function ConfiguracionPage() {
           </div>
 
           {/* Right panel: Live WhatsApp Sandbox Simulator (WOW Factor) */}
-          <div className="w-full lg:w-[440px] border-t lg:border-t-0 bg-white p-12 overflow-y-auto flex flex-col justify-start gap-6">
+          <div className="w-full lg:w-[440px] border-t lg:border-t-0 bg-white p-6 md:p-12 overflow-y-auto flex flex-col justify-start gap-6">
             <div>
               <h3 className="text-sm font-black text-slate-950 flex items-center gap-2">
                 <MessageSquare size={16} className="text-emerald-500" /> Sandbox de la IA en Tiempo Real

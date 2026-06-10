@@ -157,15 +157,21 @@ export default function CitasPage() {
       });
       if (res.ok) {
         loadedDoctors = await res.json();
+        if (!loadedDoctors || loadedDoctors.length === 0) {
+          throw new Error('Lista de médicos vacía en la base de datos');
+        }
         setDoctors(loadedDoctors);
+      } else {
+        throw new Error(`Error en API: ${res.status}`);
       }
     } catch (err) {
       console.warn('Backend offline o error al obtener médicos, cargando locales.', err);
       const offlineDoctors = localStorage.getItem('rocita_doctors');
       if (offlineDoctors) {
         loadedDoctors = JSON.parse(offlineDoctors);
-        setDoctors(loadedDoctors);
-      } else {
+      }
+      
+      if (!loadedDoctors || loadedDoctors.length === 0) {
         loadedDoctors = [
           { id: 1, name: 'Dra. Carolina Gómez', specialty: 'Cardiología', email: 'carolina.gomez@rocita.ai', phone: '+57 300 123 4567' },
           { id: 2, name: 'Dr. Alejandro Restrepo', specialty: 'Dermatología', email: 'alejandro.restrepo@rocita.ai', phone: '+57 301 987 6543' },
@@ -173,9 +179,9 @@ export default function CitasPage() {
           { id: 4, name: 'Dra. Sandra Ortiz', specialty: 'Pediatría', email: 'sandra.ortiz@rocita.ai', phone: '+57 320 654 3210' },
           { id: 5, name: 'Dra. Diana Salazar', specialty: 'Ginecología', email: 'diana.salazar@rocita.ai', phone: '+57 301 222 3333' }
         ];
-        setDoctors(loadedDoctors);
         localStorage.setItem('rocita_doctors', JSON.stringify(loadedDoctors));
       }
+      setDoctors(loadedDoctors);
     }
 
     // 2. Fetch Patient Profiles
@@ -186,6 +192,8 @@ export default function CitasPage() {
       if (res.ok) {
         loadedProfiles = await res.json();
         setPatientProfiles(loadedProfiles);
+      } else {
+        throw new Error(`Error en API: ${res.status}`);
       }
     } catch (err) {
       console.warn('Backend offline o error al obtener perfiles, cargando locales.', err);
@@ -222,6 +230,8 @@ export default function CitasPage() {
         if (loadedAppointments.length > 0 && !selectedRowId) {
           setSelectedRowId(loadedAppointments[0].id);
         }
+      } else {
+        throw new Error(`Error en API: ${res.status}`);
       }
     } catch (err) {
       console.warn('Backend offline o error al obtener citas, usando demo.', err);
@@ -944,15 +954,15 @@ export default function CitasPage() {
         </div>
 
         {/* 🟩 SHEET STATUS BAR FOOTER */}
-        <div className="bg-slate-100 border-t border-slate-200 px-6 py-1 flex items-center justify-between text-[10px] text-slate-500 font-bold shrink-0 select-none">
-          <div className="flex items-center gap-4">
+        <div className="bg-slate-100 border-t border-slate-200 px-4 md:px-6 py-1.5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-slate-500 font-bold shrink-0 select-none">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1">
             <span className="bg-emerald-600 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase">Hoja 1</span>
             <span>Filas cargadas: <span className="text-slate-700">{filteredAppointments.length}</span></span>
             <span>Confirmadas: <span className="text-emerald-600">{appointments.filter(a => a.status === 'Confirmado').length}</span></span>
             <span>Pendientes: <span className="text-amber-600">{appointments.filter(a => a.status === 'Pendiente').length}</span></span>
             <span className="text-rose-500">Sin Médico: {appointments.filter(a => a.doctor === 'Por asignar' || !a.doctor || a.doctor === '').length}</span>
           </div>
-          <div>
+          <div className="text-slate-400">
             <span>Google Sheets IPS Connector v1.0.0</span>
           </div>
         </div>
@@ -1124,7 +1134,8 @@ export default function CitasPage() {
                       <select
                         value={appSpecialty}
                         onChange={(e) => setAppSpecialty(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
+                        disabled={appDoctorId !== 'unassigned'}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                       >
                         <option value="Consulta General">Consulta General</option>
                         <option value="Cardiología">Cardiología</option>
@@ -1139,7 +1150,16 @@ export default function CitasPage() {
                       <label className="text-[10px] font-black uppercase text-slate-400 block">Profesional Asignado *</label>
                       <select
                         value={appDoctorId}
-                        onChange={(e) => setAppDoctorId(e.target.value)}
+                        onChange={(e) => {
+                          const docId = e.target.value;
+                          setAppDoctorId(docId);
+                          if (docId !== 'unassigned') {
+                            const doc = doctors.find(d => d.id.toString() === docId);
+                            if (doc) {
+                              setAppSpecialty(doc.specialty);
+                            }
+                          }
+                        }}
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
                       >
                         <option value="unassigned">⚠️ Por asignar (En el centro médico)</option>
@@ -1288,7 +1308,8 @@ export default function CitasPage() {
                       <select
                         value={editSpecialty}
                         onChange={(e) => setEditSpecialty(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
+                        disabled={editDoctorId !== 'unassigned'}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                       >
                         <option value="Consulta General">Consulta General</option>
                         <option value="Cardiología">Cardiología</option>
@@ -1303,7 +1324,16 @@ export default function CitasPage() {
                       <label className="text-[10px] font-black uppercase text-slate-400 block">Médico Asignado</label>
                       <select
                         value={editDoctorId}
-                        onChange={(e) => setEditDoctorId(e.target.value)}
+                        onChange={(e) => {
+                          const docId = e.target.value;
+                          setEditDoctorId(docId);
+                          if (docId !== 'unassigned') {
+                            const doc = doctors.find(d => d.id.toString() === docId);
+                            if (doc) {
+                              setEditSpecialty(doc.specialty);
+                            }
+                          }
+                        }}
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
                       >
                         <option value="unassigned">⚠️ Por asignar (En el centro médico)</option>
