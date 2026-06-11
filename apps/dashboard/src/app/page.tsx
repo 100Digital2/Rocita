@@ -211,6 +211,112 @@ export default function Dashboard() {
     }
   };
 
+  const saveNotificationsFromCampaign = (patients: any[]) => {
+    const stored = localStorage.getItem('rocita_notifications');
+    let currentNotifs: any[] = [];
+    
+    if (stored) {
+      currentNotifs = JSON.parse(stored);
+    } else {
+      // Mock inicial
+      currentNotifs = [
+        {
+          id: 'notif-1',
+          type: 'confirmacion',
+          patientName: 'Carlos Humberto Pérez',
+          doctorName: 'Dra. Carolina Gómez',
+          specialty: 'Cardiología',
+          text: 'Carlos Humberto Pérez ha confirmado su cita para el Lunes 25 de Mayo a las 10:30 AM.',
+          time: 'Hace 5 mins',
+          unread: true,
+          chatHistory: [
+            { sender: 'rocita', text: 'Hola Carlos. Te escribe Rocita virtual...', time: '09:00 AM' },
+            { sender: 'paciente', text: 'Hola! Sí claro, allá estaré.', time: '09:02 AM' },
+            { sender: 'rocita', text: '¡Excelente! Hemos confirmado tu asistencia.', time: '09:02 AM' }
+          ]
+        },
+        {
+          id: 'notif-2',
+          type: 'cancelacion',
+          patientName: 'Laura Ruiz',
+          doctorName: 'Dr. Alejandro Restrepo',
+          specialty: 'Dermatología',
+          text: 'Laura Ruiz ha cancelado su cita de Dermatología debido a motivos de fuerza mayor.',
+          time: 'Hace 24 mins',
+          unread: true,
+          chatHistory: [
+            { sender: 'rocita', text: 'Hola Laura. Te escribe Rocita...', time: '08:30 AM' },
+            { sender: 'paciente', text: '2', time: '08:42 AM' },
+            { sender: 'rocita', text: 'Entendido, Laura. Has indicado que NO asistirás.', time: '08:42 AM' }
+          ]
+        },
+        {
+          id: 'notif-3',
+          type: 'fallo',
+          patientName: 'Mateo Sánchez',
+          text: 'Recordatorio fallido: El número de paciente (+57 312 456 7890) no cuenta con una cuenta de WhatsApp activa.',
+          time: 'Hace 1 hora',
+          unread: true,
+          chatHistory: []
+        }
+      ];
+    }
+
+    const newNotifs = patients.slice(0, 6).map((pat, idx) => {
+      let template = message || 'Hola {nombre_paciente}. Te escribe Rocita, tu asistente de Salud Eficiente. Queremos recordarte tu cita programada con {nombre_doctor} ({especialidad}) el {fecha_cita}. ¿Confirmas tu asistencia?';
+      const renderedMsg = template
+        .replace(/{nombre_paciente}/g, pat.name)
+        .replace(/{nombre_doctor}/g, pat.doctor || 'médico especialista')
+        .replace(/{fecha_cita}/g, pat.nextAppointment || 'próximamente')
+        .replace(/{lugar}/g, 'Consultorio Médico');
+
+      let type: 'confirmacion' | 'cancelacion' | 'fallo' = 'confirmacion';
+      let notifText = '';
+      let chatHistory: any[] = [];
+
+      if (idx === 1 || idx === 5) {
+        type = 'cancelacion';
+        notifText = `${pat.name} ha cancelado su cita de ${pat.specialty} con ${pat.doctor} vía SMS de respaldo.`;
+        chatHistory = [
+          { sender: 'rocita', text: renderedMsg, time: '11:00 AM' },
+          { sender: 'paciente', text: 'No podré asistir esta vez, muchas gracias.', time: '11:02 AM' },
+          { sender: 'rocita', text: 'Entendido. Se ha registrado la cancelación de tu cita en el sistema de manera formal.', time: '11:02 AM' }
+        ];
+      } else if (idx === 3) {
+        type = 'confirmacion';
+        notifText = `${pat.name} ha confirmado su cita con ${pat.doctor} (${pat.specialty}) mediante llamada de voz sintética.`;
+        chatHistory = [
+          { sender: 'rocita', text: renderedMsg, time: '11:05 AM' },
+          { sender: 'paciente', text: '[Llamada de voz contestada - Confirmación por teclado (1)]', time: '11:06 AM' },
+          { sender: 'rocita', text: '[IA Voice: Cita confirmada en el sistema]', time: '11:06 AM' }
+        ];
+      } else {
+        type = 'confirmacion';
+        notifText = `${pat.name} ha confirmado su cita con ${pat.doctor} (${pat.specialty}) para el ${pat.nextAppointment} vía WhatsApp.`;
+        chatHistory = [
+          { sender: 'rocita', text: renderedMsg, time: '11:00 AM' },
+          { sender: 'paciente', text: '1', time: '11:01 AM' },
+          { sender: 'rocita', text: '¡Excelente! Cita confirmada en el sistema. Que tengas un feliz día.', time: '11:01 AM' }
+        ];
+      }
+
+      return {
+        id: `notif-dyn-${Date.now()}-${idx}`,
+        type,
+        patientName: pat.name,
+        doctorName: pat.doctor,
+        specialty: pat.specialty,
+        text: notifText,
+        time: 'Hace un momento',
+        unread: true,
+        chatHistory
+      };
+    });
+
+    const combined = [...newNotifs, ...currentNotifs];
+    localStorage.setItem('rocita_notifications', JSON.stringify(combined));
+  };
+
   // Base de datos de pacientes y médicos precargados
   const [dbPatients, setDbPatients] = useState<any[]>([]);
   const [dbDoctors, setDbDoctors] = useState<any[]>([]);
@@ -494,6 +600,7 @@ export default function Dashboard() {
 
         if (nextProgress >= 100) {
           clearInterval(interval);
+          saveNotificationsFromCampaign(sourceList);
           setTimeout(() => {
             setIsSending(false);
             setStep(3);

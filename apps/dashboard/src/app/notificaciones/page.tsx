@@ -54,7 +54,7 @@ export default function NotificacionesPage() {
   const [showDrawer, setShowDrawer] = useState(false);
 
   // Datos mock enriquecidos de notificaciones con historiales de chat para el WOW factor
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
+  const initialMockNotifications: NotificationItem[] = [
     {
       id: 'notif-1',
       type: 'confirmacion',
@@ -65,9 +65,9 @@ export default function NotificacionesPage() {
       time: 'Hace 5 mins',
       unread: true,
       chatHistory: [
-        { sender: 'rocita', text: 'Hola Carlos. Te escribe Rocita, asistente virtual de Salud Eficiente. Queremos recordarte tu cita programada con la Dra. Carolina Gómez (Cardiología) el Lunes 25 de Mayo a las 10:30 AM en el Consultorio 402. ¿Confirmas tu asistencia? responde 1 para SÍ, o 2 para NO.', time: '09:00 AM' },
-        { sender: 'paciente', text: 'Hola! Sí claro, allá estaré. Muchas gracias por avisar.', time: '09:02 AM' },
-        { sender: 'rocita', text: '¡Excelente! Hemos confirmado tu asistencia de manera automática en el sistema. Que tengas un feliz día.', time: '09:02 AM' }
+        { sender: 'rocita', text: 'Hola Carlos. Te escribe Rocita virtual...', time: '09:00 AM' },
+        { sender: 'paciente', text: 'Hola! Sí claro, allá estaré.', time: '09:02 AM' },
+        { sender: 'rocita', text: '¡Excelente! Hemos confirmado tu asistencia.', time: '09:02 AM' }
       ]
     },
     {
@@ -80,11 +80,9 @@ export default function NotificacionesPage() {
       time: 'Hace 24 mins',
       unread: true,
       chatHistory: [
-        { sender: 'rocita', text: 'Hola Laura. Te escribe Rocita. Queremos recordarte tu cita programada con el Dr. Alejandro Restrepo (Dermatología) hoy a las 4:00 PM. ¿Confirmas tu asistencia? responde 1 para SÍ, o 2 para NO.', time: '08:30 AM' },
+        { sender: 'rocita', text: 'Hola Laura. Te escribe Rocita...', time: '08:30 AM' },
         { sender: 'paciente', text: '2', time: '08:42 AM' },
-        { sender: 'rocita', text: 'Entendido, Laura. Has indicado que NO asistirás. ¿Deseas que te contactemos para reprogramar tu cita?', time: '08:42 AM' },
-        { sender: 'paciente', text: 'Sí por favor, se me cruzó un viaje de trabajo y no alcanzo a llegar hoy. Gracias.', time: '08:43 AM' },
-        { sender: 'rocita', text: 'Perfecto. Hemos liberado tu espacio en el consultorio y un asesor de Servicio al Cliente te escribirá para reasignar tu cita. ¡Buen viaje!', time: '08:44 AM' }
+        { sender: 'rocita', text: 'Entendido, Laura. Has indicado que NO asistirás.', time: '08:42 AM' }
       ]
     },
     {
@@ -94,7 +92,7 @@ export default function NotificacionesPage() {
       text: 'Recordatorio fallido: El número de paciente (+57 312 456 7890) no cuenta con una cuenta de WhatsApp activa.',
       time: 'Hace 1 hora',
       unread: true,
-      chatHistory: [] // Sin chat porque falló el envío
+      chatHistory: []
     },
     {
       id: 'notif-4',
@@ -119,15 +117,24 @@ export default function NotificacionesPage() {
         { sender: 'rocita', text: '¡Cita Confirmada con éxito! Gracias por tu puntualidad. Recuerda llegar 15 minutos antes.', time: '07:16 AM' }
       ]
     }
-  ]);
+  ];
 
-  // Proteger la ruta de demo
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  // Proteger la ruta de demo y cargar notificaciones de localStorage
   useEffect(() => {
     const auth = localStorage.getItem('rocita_auth');
     if (!auth) {
       router.push('/login');
     } else {
       setIsAuthenticated(true);
+      const stored = localStorage.getItem('rocita_notifications');
+      if (stored) {
+        setNotifications(JSON.parse(stored));
+      } else {
+        setNotifications(initialMockNotifications);
+        localStorage.setItem('rocita_notifications', JSON.stringify(initialMockNotifications));
+      }
     }
   }, [router]);
 
@@ -137,17 +144,27 @@ export default function NotificacionesPage() {
   };
 
   const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, unread: false } : n))
-    );
+    setNotifications(prev => {
+      const updated = prev.map(n => (n.id === id ? { ...n, unread: false } : n));
+      localStorage.setItem('rocita_notifications', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    setNotifications(prev => {
+      const updated = prev.map(n => ({ ...n, unread: false }));
+      localStorage.setItem('rocita_notifications', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications(prev => {
+      const updated = prev.filter(n => n.id !== id);
+      localStorage.setItem('rocita_notifications', JSON.stringify(updated));
+      return updated;
+    });
     if (selectedNotification?.id === id) {
       setShowDrawer(false);
       setSelectedNotification(null);
