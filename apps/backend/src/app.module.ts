@@ -9,6 +9,7 @@ import { PatientProfile } from './patients/patient-profile.entity';
 import { PatientsModule } from './patients/patients.module';
 import { Doctor } from './doctors/doctor.entity';
 import { DoctorsModule } from './doctors/doctors.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { DoctorsModule } from './doctors/doctors.module';
     AuthModule,
     PatientsModule,
     DoctorsModule,
+    WhatsappModule,
   ],
   controllers: [AppController],
   providers: [AppService],

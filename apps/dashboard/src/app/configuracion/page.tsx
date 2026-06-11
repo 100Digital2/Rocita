@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { io } from 'socket.io-client';
 import {
   Settings,
   LayoutDashboard,
@@ -73,6 +74,76 @@ export default function ConfiguracionPage() {
   const [voiceFallback, setVoiceFallback] = useState(false);
   const [isApiConnecting, setIsApiConnecting] = useState(false);
   const [apiConnectionStatus, setApiConnectionStatus] = useState<'connected' | 'error' | 'none'>('connected');
+
+  // WhatsApp QR Connection (Baileys)
+  const [whatsappStatus, setWhatsappStatus] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
+  const [qrCode, setQrCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 1. Obtener estado inicial del backend
+    fetch(`${apiUrl}/whatsapp/status`)
+      .then(res => res.json())
+      .then(data => {
+        setWhatsappStatus(data.status);
+        if (data.qr) {
+          setQrCode(data.qr);
+        }
+      })
+      .catch(err => console.error('Error al obtener estado inicial de WhatsApp:', err));
+
+    // 2. Conectar al WebSocket de WhatsApp
+    const socket = io(`${apiUrl}/whatsapp`, {
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      console.log('Conectado al WS de WhatsApp del Backend');
+    });
+
+    socket.on('whatsapp.status', (data: { status: 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' }) => {
+      setWhatsappStatus(data.status);
+      if (data.status !== 'CONNECTING') {
+        setQrCode(null);
+      }
+    });
+
+    socket.on('whatsapp.qr', (data: { qr: string }) => {
+      setQrCode(data.qr);
+      setWhatsappStatus('CONNECTING');
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [apiUrl]);
+
+  const handleConnectWhatsapp = async () => {
+    try {
+      setIsApiConnecting(true);
+      const res = await fetch(`${apiUrl}/whatsapp/connect`, { method: 'POST' });
+      await res.json();
+      showToastNotification('Inicializando canal de WhatsApp...', 'info');
+    } catch (err) {
+      showToastNotification('Error al iniciar vinculación de WhatsApp.', 'warning');
+    } finally {
+      setIsApiConnecting(false);
+    }
+  };
+
+  const handleDisconnectWhatsapp = async () => {
+    try {
+      setIsApiConnecting(true);
+      const res = await fetch(`${apiUrl}/whatsapp/disconnect`, { method: 'POST' });
+      await res.json();
+      showToastNotification('Sesión de WhatsApp cerrada.', 'success');
+      setWhatsappStatus('DISCONNECTED');
+      setQrCode(null);
+    } catch (err) {
+      showToastNotification('Error al cerrar sesión de WhatsApp.', 'warning');
+    } finally {
+      setIsApiConnecting(false);
+    }
+  };
 
   // 4. Plantillas de WhatsApp & Sandbox
   const [templateCategory, setTemplateCategory] = useState<'confirmacion' | 'reprogramacion' | 'cancelacion'>('confirmacion');
@@ -445,60 +516,104 @@ export default function ConfiguracionPage() {
                     <h3 className="text-md font-black text-slate-900 flex items-center gap-2">
                       <Globe size={18} className="text-sky-500" /> Integración de Canales de Envío
                     </h3>
-                    <p className="text-xs text-slate-400 font-bold mt-1">Conecta las credenciales oficiales para emitir recordatorios a tus pacientes.</p>
+                    <p className="text-xs text-slate-400 font-bold mt-1">Sincroniza tu cuenta de WhatsApp para emitir recordatorios automatizados de citas.</p>
                   </div>
 
-                  {/* Webhook Status Widget */}
-                  <div className="bg-slate-50 rounded-3xl p-5 border border-slate-100 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center shrink-0">
-                        <Activity size={18} className={apiConnectionStatus === 'connected' ? 'text-emerald-500' : 'text-slate-400'} />
-                      </div>
-                      <div>
-                        <h4 className="font-extrabold text-xs text-slate-800">Estado del API Webhook</h4>
-                        <p className="text-[9px] font-bold text-slate-400 mt-0.5">Integración con WhatsApp Cloud API</p>
-                      </div>
-                    </div>
-                    
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-[10px] font-black">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                      Conectado
-                    </span>
-                  </div>
-
-                  {/* API Credentials */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-700 block">WhatsApp Token de Acceso Temporal / Permanente</label>
-                      <div className="relative">
-                        <input
-                          type={showApiKey ? 'text' : 'password'}
-                          value={whatsappApiKey}
-                          onChange={(e) => setWhatsappApiKey(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-4 pr-12 text-xs font-bold outline-none focus:ring-2 focus:ring-sky-500 transition-all font-mono"
-                        />
+                  {/* WhatsApp Connection State Handler */}
+                  <div className="bg-slate-50 border border-blue-50/50 rounded-[2rem] p-6 md:p-8 space-y-6">
+                    {whatsappStatus === 'DISCONNECTED' && (
+                      <div className="text-center space-y-4 py-4">
+                        <div className="w-16 h-16 bg-white border border-slate-100 rounded-[1.5rem] shadow-sm flex items-center justify-center mx-auto text-slate-400">
+                          <Globe size={28} />
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-xs text-slate-800">WhatsApp Desconectado</h4>
+                          <p className="text-[10px] font-bold text-slate-400 mt-1 max-w-sm mx-auto leading-normal">
+                            Para poder enviar recordatorios automáticos, debes vincular una cuenta escaneando el código QR desde tu celular.
+                          </p>
+                        </div>
                         <button
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          onClick={handleConnectWhatsapp}
+                          disabled={isApiConnecting}
+                          className="px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white font-black text-xs rounded-full shadow-lg shadow-sky-500/25 hover:shadow-sky-600/30 transition-all inline-flex items-center gap-2 active:scale-95 duration-200"
                         >
-                          {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                          {isApiConnecting ? 'Generando...' : 'Vincular Cuenta (Generar QR)'}
                         </button>
                       </div>
-                    </div>
+                    )}
 
-                    {/* Test connection action */}
-                    <div className="flex items-center justify-between gap-4 pt-1">
-                      <p className="text-[10px] font-medium text-slate-400 leading-normal max-w-xs">
-                        Para habilitar la demo, validamos tus credenciales con un Ping seguro a la API de Meta.
-                      </p>
-                      <button
-                        onClick={handleTestConnection}
-                        disabled={isApiConnecting}
-                        className="px-4 py-2 bg-sky-50 hover:bg-sky-500 hover:text-white text-sky-600 font-extrabold text-xs rounded-xl border border-sky-100 hover:border-sky-500 transition-all active:scale-95 duration-200 shrink-0"
-                      >
-                        {isApiConnecting ? 'Conectando...' : 'Probar API'}
-                      </button>
-                    </div>
+                    {whatsappStatus === 'CONNECTING' && (
+                      <div className="text-center space-y-4 flex flex-col items-center justify-center py-2">
+                        {qrCode ? (
+                          <>
+                            <div className="p-4 bg-white border border-blue-100 rounded-[2rem] shadow-md inline-block max-w-[200px]">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={qrCode} alt="Código QR de WhatsApp" className="w-full h-auto" />
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-xs text-slate-800">Escanea el código QR</h4>
+                              <p className="text-[10px] font-bold text-slate-400 mt-1 max-w-xs mx-auto leading-normal">
+                                Abre WhatsApp en tu teléfono ➔ Menú / Configuración ➔ Dispositivos vinculados ➔ Vincular un dispositivo.
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="py-6 space-y-4">
+                            <div className="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin mx-auto"></div>
+                            <div>
+                              <h4 className="font-extrabold text-xs text-slate-800">Iniciando canal de WhatsApp...</h4>
+                              <p className="text-[10px] font-bold text-slate-400 mt-1 max-w-xs mx-auto leading-normal">
+                                Estamos estableciendo los WebSockets del backend. El código QR aparecerá en unos segundos.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        <button
+                          onClick={handleDisconnectWhatsapp}
+                          disabled={isApiConnecting}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold text-[10px] rounded-xl transition-all"
+                        >
+                          Cancelar Vinculación
+                        </button>
+                      </div>
+                    )}
+
+                    {whatsappStatus === 'CONNECTED' && (
+                      <div className="text-center space-y-4 py-4">
+                        <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-[1.5rem] shadow-sm flex items-center justify-center mx-auto text-emerald-500 relative">
+                          <CheckCheck size={28} className="animate-pulse" />
+                          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                          </span>
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-xs text-emerald-600 flex items-center justify-center gap-1.5">
+                            WhatsApp Conectado Exitosamente
+                          </h4>
+                          <p className="text-[10px] font-bold text-slate-400 mt-1 max-w-sm mx-auto leading-normal">
+                            Tu cuenta está activa en el sistema. Rocita enviará los recordatorios programados en tiempo real.
+                          </p>
+                        </div>
+                        <div className="bg-white border border-slate-100 rounded-2xl p-4 text-left max-w-xs mx-auto space-y-2 text-[10px] font-bold text-slate-600">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Canal:</span>
+                            <span>Embebido (Baileys)</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Estado:</span>
+                            <span className="text-emerald-500 font-black">Activo (100% OK)</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleDisconnectWhatsapp}
+                          disabled={isApiConnecting}
+                          className="px-5 py-2.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-600 border border-rose-100 hover:border-rose-500 font-black text-[10px] rounded-full transition-all active:scale-95 duration-200"
+                        >
+                          Desconectar Cuenta
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Fallback settings */}

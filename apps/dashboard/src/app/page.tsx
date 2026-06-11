@@ -170,6 +170,47 @@ export default function Dashboard() {
   const [fullPatientsList, setFullPatientsList] = useState<any[]>([]);
   const [liveSendStatus, setLiveSendStatus] = useState<any[]>([]);
 
+  // WhatsApp QR Status & Real Send Capabilities
+  const [whatsappStatus, setWhatsappStatus] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
+  const sentPatientsRef = useRef<Record<number, boolean>>({});
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch(`${apiUrl}/whatsapp/status`)
+      .then(res => res.json())
+      .then(data => setWhatsappStatus(data.status))
+      .catch(err => console.error('Error al consultar estado de WhatsApp:', err));
+  }, [isAuthenticated, apiUrl]);
+
+  const sendRealWhatsappMessage = async (patient: any) => {
+    if (!patient.phone) return;
+    
+    // Rellenar las variables en la plantilla o usar una por defecto si está vacía
+    let template = message || 'Hola {nombre_paciente}. Te escribe Rocita, tu asistente de Salud Eficiente. Queremos recordarte tu cita programada con {nombre_doctor} ({especialidad}) el {fecha_cita}. ¿Confirmas tu asistencia?';
+    
+    const renderedMsg = template
+      .replace(/{nombre_paciente}/g, patient.name)
+      .replace(/{nombre_doctor}/g, patient.doctor || 'médico especialista')
+      .replace(/{fecha_cita}/g, patient.nextAppointment || 'próximamente')
+      .replace(/{lugar}/g, 'Consultorio Médico');
+
+    try {
+      await fetch(`${apiUrl}/whatsapp/send-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: patient.phone,
+          message: renderedMsg,
+        }),
+      });
+      console.log(`Mensaje real enviado por WhatsApp a ${patient.name} (${patient.phone})`);
+    } catch (err) {
+      console.error('Error al enviar mensaje real por WhatsApp:', err);
+    }
+  };
+
   // Base de datos de pacientes y médicos precargados
   const [dbPatients, setDbPatients] = useState<any[]>([]);
   const [dbDoctors, setDbDoctors] = useState<any[]>([]);
@@ -337,6 +378,7 @@ export default function Dashboard() {
   const handleSend = () => {
     setIsSending(true);
     setSendProgress(0);
+    sentPatientsRef.current = {};
     
     // Tomamos hasta 6 pacientes de la lista para mostrar en la consola en vivo. Si no hay, cargamos mock.
     const sourceList = fullPatientsList.length > 0 ? fullPatientsList : [
@@ -379,6 +421,10 @@ export default function Dashboard() {
               if (nextProgress < triggerProgress + 15) {
                 return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
               }
+              if (whatsappStatus === 'CONNECTED' && !sentPatientsRef.current[idx]) {
+                sentPatientsRef.current[idx] = true;
+                sendRealWhatsappMessage(pat);
+              }
               return { ...pat, step: 3, statusText: 'Enviado por WhatsApp ✓', channel: 'whatsapp' };
             }
 
@@ -397,6 +443,10 @@ export default function Dashboard() {
             if (idx === 2) {
               if (nextProgress < triggerProgress + 15) {
                 return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
+              }
+              if (whatsappStatus === 'CONNECTED' && !sentPatientsRef.current[idx]) {
+                sentPatientsRef.current[idx] = true;
+                sendRealWhatsappMessage(pat);
               }
               return { ...pat, step: 3, statusText: 'Enviado por WhatsApp ✓', channel: 'whatsapp' };
             }
@@ -419,6 +469,10 @@ export default function Dashboard() {
             if (idx === 4) {
               if (nextProgress < triggerProgress + 15) {
                 return { ...pat, step: 1, statusText: 'Enviando WhatsApp...', channel: 'whatsapp' };
+              }
+              if (whatsappStatus === 'CONNECTED' && !sentPatientsRef.current[idx]) {
+                sentPatientsRef.current[idx] = true;
+                sendRealWhatsappMessage(pat);
               }
               return { ...pat, step: 3, statusText: 'Enviado por WhatsApp ✓', channel: 'whatsapp' };
             }
