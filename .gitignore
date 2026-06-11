@@ -44,3 +44,7 @@ dist/
 *.sqlite
 *.sqlite3
 **/rocita.db
+
+# WhatsApp Session
+apps/backend/storage/
+
