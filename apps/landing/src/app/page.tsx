@@ -1,15 +1,24 @@
-﻿import Header from '@/components/Header';
+'use client';
+import { useState } from 'react';
+import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import CTASection from '@/components/CTASection';
+import DemoModal from '@/components/DemoModal';
 
 export default function Home() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
+  const openDemo = () => setIsDemoModalOpen(true);
+
   return (
     <main className="min-h-screen bg-background selection:bg-sky-500/20">
-      <Header />
-      <Hero />
+      <Header onOpenDemo={openDemo} />
+      <Hero onOpenDemo={openDemo} />
       <Features />
-      <CTASection />
+      <CTASection onOpenDemo={openDemo} />
+      
+      <DemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
       
       {/* Footer Pro */}
       <footer className="py-32 border-t border-zinc-200 bg-white px-6">
@@ -20,7 +29,15 @@ export default function Home() {
               <span className="text-3xl font-black tracking-tighter"><span className="font-extrabold tracking-tight text-slate-900">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span></span>
             </div>
             <p className="text-zinc-500 text-lg max-w-xs leading-relaxed">
-              La inteligencia artificial al servicio de la salud. Optimizando la conexión entre pacientes e instituciones en 100Digital.
+              La inteligencia artificial al servicio de la salud. Optimizando la conexión entre pacientes e instituciones en{' '}
+              <a 
+                href="https://100digital.com.co/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-sky-500 hover:text-sky-600 hover:underline transition-colors font-semibold"
+              >
+                100Digital
+              </a>.
             </p>
           </div>
           <div>
@@ -43,7 +60,18 @@ export default function Home() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-32 pt-12 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6 text-zinc-400 text-sm font-medium">
-          <span>© 2026 100Digital. Todos los derechos reservados.</span>
+          <span>
+            © 2026{' '}
+            <a 
+              href="https://100digital.com.co/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="hover:text-zinc-600 transition-colors underline decoration-dotted decoration-zinc-300"
+            >
+              100Digital
+            </a>
+            . Todos los derechos reservados.
+          </span>
           <div className="flex gap-8">
             <span className="flex items-center gap-2"><span className="w-2 h-2 bg-emerald-500 rounded-full"></span> Sistemas OK</span>
             <span>Hecho con ❤️ en Colombia.</span>

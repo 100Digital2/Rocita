@@ -3,7 +3,11 @@ import { ArrowRight, FileSpreadsheet, LayoutTemplate, Clock, BarChart3, UserChec
 import { motion } from "framer-motion"
 import WhatsappSimulator from "./WhatsappSimulator"
 
-export default function Hero() {
+interface HeroProps {
+  onOpenDemo: () => void;
+}
+
+export default function Hero({ onOpenDemo }: HeroProps) {
     return (
         <>
             <section id="servicios" className="relative pt-44 pb-32 px-6 overflow-hidden">
@@ -53,7 +57,10 @@ export default function Hero() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.6, delay: 0.3 }}
                                 className="flex flex-col sm:flex-row gap-5">
-                                <button className="relative overflow-hidden bg-primary text-primary-foreground px-8 py-4 rounded-2xl text-lg font-bold hover:shadow-[0_20px_40px_-10px_rgba(14,165,233,0.5)] transition-all flex items-center justify-center gap-3 group">
+                                <button 
+                                    onClick={onOpenDemo}
+                                    className="relative overflow-hidden bg-primary text-primary-foreground px-8 py-4 rounded-2xl text-lg font-bold hover:shadow-[0_20px_40px_-10px_rgba(14,165,233,0.5)] transition-all flex items-center justify-center gap-3 group"
+                                >
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none"></div>
                                     Agenda una demo
                                     <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />

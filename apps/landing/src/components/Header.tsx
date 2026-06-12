@@ -3,7 +3,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Phone, Mail, Menu, X, UserCircle, ChevronRight } from 'lucide-react';
 
-export default function Header() {
+interface HeaderProps {
+  onOpenDemo: () => void;
+}
+
+export default function Header({ onOpenDemo }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://app.rocita.co/login';
 
@@ -56,7 +60,10 @@ export default function Header() {
           </a>
 
           {/* Desktop "Agendar Demo" */}
-          <button className='hidden sm:block bg-zinc-900 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold hover:bg-zinc-800 transition-all shadow-md active:scale-95 text-sm md:text-base'>
+          <button 
+            onClick={onOpenDemo}
+            className='hidden sm:block bg-zinc-900 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold hover:bg-zinc-800 transition-all shadow-md active:scale-95 text-sm md:text-base'
+          >
             Agendar Demo
           </button>
 
@@ -138,7 +145,10 @@ export default function Header() {
                   <span>Ingresar al Portal</span>
                 </a>
                 <button 
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onOpenDemo();
+                  }}
                   className='bg-zinc-900 text-white px-5 py-4 rounded-2xl font-black hover:bg-zinc-800 transition-all shadow-md active:scale-95 text-base'
                 >
                   Agendar Demo

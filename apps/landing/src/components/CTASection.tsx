@@ -1,7 +1,11 @@
-﻿"use client"
+"use client"
 import { motion } from "framer-motion"
 
-export default function CTASection() {
+interface CTASectionProps {
+  onOpenDemo: () => void;
+}
+
+export default function CTASection({ onOpenDemo }: CTASectionProps) {
     return (
         <section className="py-40 px-6">
             <div className="max-w-6xl mx-auto rounded-[4rem] bg-zinc-900 p-12 md:p-32 text-center text-white relative overflow-hidden shadow-3xl">
@@ -20,7 +24,10 @@ export default function CTASection() {
                     <p className="text-zinc-400 text-xl md:text-2xl mb-16 max-w-2xl mx-auto leading-relaxed">
                         Únete a las instituciones que ya están transformando la experiencia de sus pacientes con <span className="font-extrabold tracking-tight text-white">Ro</span><span className="font-extrabold tracking-tight text-sky-500">cita</span>.
                     </p>
-                    <button className="bg-white text-zinc-900 px-12 py-6 rounded-[2rem] text-2xl font-black hover:scale-105 transition-all shadow-xl hover:shadow-white/10">
+                    <button 
+                        onClick={onOpenDemo}
+                        className="bg-white text-zinc-900 px-12 py-6 rounded-[2rem] text-2xl font-black hover:scale-105 transition-all shadow-xl hover:shadow-white/10"
+                    >
                         Solicitar acceso prioritario
                     </button>
                 </div>
