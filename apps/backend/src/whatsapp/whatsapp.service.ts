@@ -130,7 +130,7 @@ export class WhatsappService implements OnModuleInit {
 
     try {
       // Limpiar y formatear número de teléfono
-      let cleanedPhone = phone.replace(/\D/g, '');
+      let cleanedPhone = String(phone || '').replace(/\D/g, '');
       // Si empieza con 3 y tiene 10 dígitos, asumimos que es Colombia (código país 57)
       if (cleanedPhone.length === 10 && cleanedPhone.startsWith('3')) {
         cleanedPhone = '57' + cleanedPhone;
