@@ -301,7 +301,7 @@ export default function Dashboard() {
       }
 
       return {
-        id: `notif-dyn-${Date.now()}-${idx}`,
+        id: `notif-dyn-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 9)}`,
         type,
         patientName: pat.name,
         doctorName: pat.doctor,

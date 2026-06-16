@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { WhatsappService } from './whatsapp.service';
 
 @Controller('whatsapp')
@@ -26,5 +26,10 @@ export class WhatsappController {
   async sendTest(@Body() body: { phone: string; message: string }) {
     const success = await this.whatsappService.sendReminder(body.phone, body.message);
     return { success };
+  }
+
+  @Get('chats/:phone')
+  async getChats(@Param('phone') phone: string) {
+    return this.whatsappService.getChats(phone);
   }
 }

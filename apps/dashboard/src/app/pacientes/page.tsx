@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { io } from 'socket.io-client';
 import {
   User,
   LayoutDashboard,
@@ -234,6 +235,26 @@ export default function PacientesPage() {
       return;
     }
 
+    // Obtener chats guardados en localStorage para persistencia
+    const savedChatsRaw = localStorage.getItem('rocita_chat_histories');
+    const savedChats = savedChatsRaw ? JSON.parse(savedChatsRaw) : {};
+
+    const getChatHistory = (phone: string) => {
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (savedChats[cleanPhone]) {
+        return savedChats[cleanPhone];
+      }
+      // Fallback para chats por defecto si es Carlos
+      if (cleanPhone === '573101234567') {
+        return [
+          { sender: 'rocita', text: 'Hola Carlos. Te escribe Rocita, asistente virtual de Salud Eficiente. Queremos recordarte tu cita programada con la Dra. Carolina Gómez (Cardiología) el Lunes 25 de Mayo a las 10:30 AM en el Consultorio 402. ¿Confirmas tu asistencia? Responde 1 para SÍ, o 2 para NO.', time: '09:00 AM', status: 'read' },
+          { sender: 'paciente', text: 'Hola! Sí claro, allá estaré. Muchas gracias por avisar.', time: '09:02 AM' },
+          { sender: 'rocita', text: '¡Excelente! Hemos confirmado tu asistencia de manera automática en el sistema. Que tengas un feliz día.', time: '09:02 AM', status: 'read' }
+        ];
+      }
+      return [];
+    };
+
     // Mapear citas existentes a la interfaz de la UI
     const mappedAppointments = appointments.map((p: any) => ({
       id: `pat-${p.id}`,
@@ -253,7 +274,7 @@ export default function PacientesPage() {
       history: [
         { date: 'Hoy', specialty: p.specialty || 'Consulta General', doctor: p.doctor || 'Dr. Alejandro Restrepo', status: p.status || 'Pendiente' }
       ],
-      chatHistory: []
+      chatHistory: getChatHistory(p.phone || '')
     }));
 
     // Filtrar perfiles independientes que no tienen cita en la lista de citas para listarlos como "Sin Citas"
@@ -275,7 +296,7 @@ export default function PacientesPage() {
         doctor: 'Sin asignar',
         nextAppointment: 'Sin citas programadas',
         history: [],
-        chatHistory: []
+        chatHistory: getChatHistory(p.phone || '')
       }));
 
     setPatients([...mappedAppointments, ...profilesWithoutAppointments]);
@@ -291,6 +312,115 @@ export default function PacientesPage() {
       fetchData();
     }
   }, [router]);
+
+  // Guardar historial de chat en localStorage para persistencia
+  const saveChatToLocal = (phone: string, messages: ChatMessage[]) => {
+    try {
+      const cleanPhone = phone.replace(/\D/g, '');
+      const savedChatsRaw = localStorage.getItem('rocita_chat_histories');
+      const savedChats = savedChatsRaw ? JSON.parse(savedChatsRaw) : {};
+      savedChats[cleanPhone] = messages;
+      localStorage.setItem('rocita_chat_histories', JSON.stringify(savedChats));
+    } catch (err) {
+      console.error('Error al guardar historial de chat en localStorage:', err);
+    }
+  };
+
+  // Conexión en tiempo real con WhatsApp vía WebSockets (Chat en Vivo)
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const socket = io(`${apiUrl}/whatsapp`, {
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      console.log('Conectado al WebSocket de WhatsApp en la vista de Pacientes');
+    });
+
+    socket.on('whatsapp.message', (data: {
+      sender: string;
+      text: string;
+      time: string;
+      timestamp: string;
+      fromMe: boolean;
+      pushName: string;
+      status?: 'sent' | 'delivered' | 'read';
+    }) => {
+      console.log('Mensaje de WhatsApp recibido por WS:', data);
+
+      // Comparación tolerante de teléfonos (coincidencia de los últimos 10 dígitos)
+      const matchPhones = (phoneA: string, phoneB: string) => {
+        const cleanA = phoneA.replace(/\D/g, '');
+        const cleanB = phoneB.replace(/\D/g, '');
+        if (!cleanA || !cleanB) return false;
+        return cleanA.endsWith(cleanB) || cleanB.endsWith(cleanA);
+      };
+
+      const newMsg: ChatMessage = {
+        sender: data.fromMe ? 'rocita' : 'paciente',
+        text: data.text,
+        time: data.time,
+        status: data.fromMe ? 'read' : undefined
+      };
+
+      // 1. Actualizar el listado general de pacientes
+      setPatients(prevPatients =>
+        prevPatients.map(p => {
+          if (matchPhones(p.phone, data.sender)) {
+            let newStatus = p.status;
+            // Si el mensaje es entrante (del paciente) y responde confirmando
+            if (!data.fromMe) {
+              const cleanedText = data.text.trim().toLowerCase();
+              if (cleanedText === '1' || cleanedText === 'si' || cleanedText === 'sí' || cleanedText.includes('confirm')) {
+                newStatus = 'Confirmado';
+              } else if (cleanedText === '2' || cleanedText === 'no' || cleanedText.includes('cancel')) {
+                newStatus = 'Cancelado';
+              }
+            }
+
+            const updatedChat = [...p.chatHistory, newMsg];
+            saveChatToLocal(p.phone, updatedChat);
+
+            return {
+              ...p,
+              status: newStatus,
+              chatHistory: updatedChat
+            };
+          }
+          return p;
+        })
+      );
+
+      // 2. Actualizar el paciente seleccionado en el drawer si es el mismo
+      setSelectedPatient(prevSelected => {
+        if (prevSelected && matchPhones(prevSelected.phone, data.sender)) {
+          let newStatus = prevSelected.status;
+          if (!data.fromMe) {
+            const cleanedText = data.text.trim().toLowerCase();
+            if (cleanedText === '1' || cleanedText === 'si' || cleanedText === 'sí' || cleanedText.includes('confirm')) {
+              newStatus = 'Confirmado';
+            } else if (cleanedText === '2' || cleanedText === 'no' || cleanedText.includes('cancel')) {
+              newStatus = 'Cancelado';
+            }
+          }
+
+          const updatedChat = [...prevSelected.chatHistory, newMsg];
+          saveChatToLocal(prevSelected.phone, updatedChat);
+
+          return {
+            ...prevSelected,
+            status: newStatus,
+            chatHistory: updatedChat
+          };
+        }
+        return prevSelected;
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -375,7 +505,7 @@ export default function PacientesPage() {
     }
   };
 
-  // Action: Send Manual Reminder Simulation
+  // Action: Send Manual Reminder Simulation / Real
   const handleSendReminder = async () => {
     if (!selectedPatient || isSendingReminder) return;
 
@@ -403,81 +533,113 @@ export default function PacientesPage() {
     // Get current time formatted
     const now = new Date();
     const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + ' ' + (now.getHours() >= 12 ? 'PM' : 'AM');
-
-    // Create the sent reminder message
-    const reminderMessage: ChatMessage = {
-      sender: 'rocita',
-      text: `Hola ${selectedPatient.name.split(' ')[0]}. Te escribe Rocita, asistente virtual de Salud Eficiente. Queremos recordarte tu cita programada de ${selectedPatient.specialty} con ${selectedPatient.doctor} el ${selectedPatient.nextAppointment}. ¿Confirmas tu asistencia? Responde 1 para SÍ, o 2 para NO.`,
-      time: timeString,
-      status: 'read'
-    };
-
-    // Update patient record
-    const updatedPatients = patients.map(p => {
-      if (p.id === selectedPatient.id) {
-        const newChat = [...p.chatHistory, reminderMessage];
-        // If they were pending, let's simulate that sending it puts the status as "Pendiente" but with chat initialized.
-        // Let's also simulate an auto-response after 3 seconds for patients Carlos, Martha or Mateo to make the dashboard alive!
-        return {
-          ...p,
-          chatHistory: newChat
-        };
-      }
-      return p;
-    });
-
-    setPatients(updatedPatients);
     
-    // Update active patient in drawer
-    setSelectedPatient(prev => prev ? { ...prev, chatHistory: [...prev.chatHistory, reminderMessage] } : null);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const messageText = `Hola ${selectedPatient.name.split(' ')[0]}. Te escribe Rocita, asistente virtual de Salud Eficiente. Queremos recordarte tu cita programada de ${selectedPatient.specialty} con ${selectedPatient.doctor} el ${selectedPatient.nextAppointment}. ¿Confirmas tu asistencia? Responde 1 para SÍ, o 2 para NO.`;
+    
+    let sentReal = false;
+    try {
+      const cleanedPhone = selectedPatient.phone.replace(/\D/g, '');
+      const res = await fetch(`${apiUrl}/whatsapp/send-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: cleanedPhone,
+          message: messageText
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          sentReal = true;
+          console.log('Mensaje real enviado exitosamente por WhatsApp a través del backend');
+        }
+      }
+    } catch (err) {
+      console.warn('No se pudo enviar el mensaje real, usando fallback de simulación local.', err);
+    }
+
+    if (!sentReal) {
+      // Fallback de Simulación Local
+      const reminderMessage: ChatMessage = {
+        sender: 'rocita',
+        text: messageText,
+        time: timeString,
+        status: 'read'
+      };
+
+      // Update patient record
+      const updatedPatients = patients.map(p => {
+        if (p.id === selectedPatient.id) {
+          const newChat = [...p.chatHistory, reminderMessage];
+          saveChatToLocal(p.phone, newChat); // PERSISTIR MENSAJE ENVIADO MOCK
+          return {
+            ...p,
+            chatHistory: newChat
+          };
+        }
+        return p;
+      });
+
+      setPatients(updatedPatients);
+      
+      // Update active patient in drawer
+      setSelectedPatient(prev => prev ? { ...prev, chatHistory: [...prev.chatHistory, reminderMessage] } : null);
+
+      // Dynamic auto-reply simulation for "Mateo Sánchez" or "Sofía Vergara" to demonstrate active AI processing
+      if (selectedPatient.id === 'pat-3' || selectedPatient.id === 'pat-5') {
+        setTimeout(() => {
+          // Patient responds "1" (Yes)
+          const patientResponse: ChatMessage = {
+            sender: 'paciente',
+            text: '1',
+            time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + ' ' + (new Date().getHours() >= 12 ? 'PM' : 'AM')
+          };
+
+          const rocitaFinalResponse: ChatMessage = {
+            sender: 'rocita',
+            text: '¡Excelente! Hemos confirmado tu asistencia de manera automática en el sistema. Que tengas un feliz día.',
+            time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + ' ' + (new Date().getHours() >= 12 ? 'PM' : 'AM'),
+            status: 'read'
+          };
+
+          setPatients(prevPatients =>
+            prevPatients.map(p => {
+              if (p.id === selectedPatient.id) {
+                const newChat = [...p.chatHistory, patientResponse, rocitaFinalResponse];
+                saveChatToLocal(p.phone, newChat); // PERSISTIR RESPUESTAS SIMULADAS MOCK
+                return {
+                  ...p,
+                  status: 'Confirmado',
+                  chatHistory: newChat
+                };
+              }
+              return p;
+            })
+          );
+
+          // If drawer is still open, update selectedPatient view in real-time
+          setSelectedPatient(prev => {
+            if (prev && prev.id === selectedPatient.id) {
+              const newChat = [...prev.chatHistory, patientResponse, rocitaFinalResponse];
+              return {
+                ...prev,
+                status: 'Confirmado',
+                chatHistory: newChat
+              };
+            }
+            return prev;
+          });
+        }, 3000);
+      }
+    }
 
     setIsSendingReminder(false);
     setSendingProgress(0);
     setSendingStep('');
-
-    // Dynamic auto-reply simulation for "Mateo Sánchez" or "Sofía Vergara" to demonstrate active AI processing
-    if (selectedPatient.id === 'pat-3' || selectedPatient.id === 'pat-5') {
-      setTimeout(() => {
-        // Patient responds "1" (Yes)
-        const patientResponse: ChatMessage = {
-          sender: 'paciente',
-          text: '1',
-          time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + ' ' + (new Date().getHours() >= 12 ? 'PM' : 'AM')
-        };
-
-        const rocitaFinalResponse: ChatMessage = {
-          sender: 'rocita',
-          text: '¡Excelente! Hemos confirmado tu asistencia de manera automática en el sistema. Que tengas un feliz día.',
-          time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + ' ' + (new Date().getHours() >= 12 ? 'PM' : 'AM'),
-          status: 'read'
-        };
-
-        setPatients(prevPatients =>
-          prevPatients.map(p => {
-            if (p.id === selectedPatient.id) {
-              return {
-                ...p,
-                status: 'Confirmado',
-                chatHistory: [...p.chatHistory, patientResponse, rocitaFinalResponse]
-              };
-            }
-            return p;
-          })
-        );
-
-        // If drawer is still open, update selectedPatient view in real-time
-        setSelectedPatient(prev => {
-          if (prev && prev.id === selectedPatient.id) {
-            return {
-              ...prev,
-              status: 'Confirmado',
-              chatHistory: [...prev.chatHistory, patientResponse, rocitaFinalResponse]
-            };
-          }
-          return prev;
-        });
-      }, 3000);
-    }
   };
 
   // Filtering Logic

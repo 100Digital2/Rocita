@@ -130,7 +130,22 @@ export default function NotificacionesPage() {
       setIsAuthenticated(true);
       const stored = localStorage.getItem('rocita_notifications');
       if (stored) {
-        setNotifications(JSON.parse(stored));
+        try {
+          const list = JSON.parse(stored);
+          const seen = new Set();
+          const deduplicated = list.map((n: any, idx: number) => {
+            // Si el ID ya existe o no tiene un ID válido, generamos uno nuevo y único
+            if (!n.id || seen.has(n.id)) {
+              n.id = `${n.id || 'notif-dyn'}-fix-${idx}-${Math.random().toString(36).substring(2, 7)}`;
+            }
+            seen.add(n.id);
+            return n;
+          });
+          setNotifications(deduplicated);
+        } catch (e) {
+          console.error('Error al parsear notificaciones de localStorage:', e);
+          setNotifications(initialMockNotifications);
+        }
       } else {
         setNotifications(initialMockNotifications);
         localStorage.setItem('rocita_notifications', JSON.stringify(initialMockNotifications));

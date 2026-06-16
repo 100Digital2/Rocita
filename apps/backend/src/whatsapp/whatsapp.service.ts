@@ -1,4 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ChatMessage } from './chat-message.entity';
 import { WhatsappGateway } from './whatsapp.gateway';
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, WASocket } from '@whiskeysockets/baileys';
 import * as QRCode from 'qrcode';
@@ -13,7 +16,11 @@ export class WhatsappService implements OnModuleInit {
   private qrCodeBase64: string | null = null;
   private readonly sessionDir = path.join(process.cwd(), 'storage', 'whatsapp-session');
 
-  constructor(private readonly gateway: WhatsappGateway) {}
+  constructor(
+    private readonly gateway: WhatsappGateway,
+    @InjectRepository(ChatMessage)
+    private readonly chatRepository: Repository<ChatMessage>,
+  ) {}
 
   async onModuleInit() {
     // Si ya existe una sesión guardada, auto-conectamos
@@ -44,6 +51,12 @@ export class WhatsappService implements OnModuleInit {
     this.gateway.emitStatus('CONNECTING');
 
     try {
+      // Asegurar la existencia del directorio de almacenamiento antes de cargar el estado de autenticación
+      const storageDir = path.dirname(this.sessionDir);
+      if (!fs.existsSync(storageDir)) {
+        fs.mkdirSync(storageDir, { recursive: true });
+      }
+
       const { state, saveCreds } = await useMultiFileAuthState(this.sessionDir);
 
       this.sock = makeWASocket({
@@ -53,6 +66,51 @@ export class WhatsappService implements OnModuleInit {
       });
 
       this.sock.ev.on('creds.update', saveCreds);
+
+      // Escuchar mensajes entrantes en tiempo real
+      this.sock.ev.on('messages.upsert', async (upsert) => {
+        if (upsert.type === 'notify') {
+          for (const msg of upsert.messages) {
+            // Ignorar si no tiene mensaje, o si viene de nosotros mismos
+            if (!msg.message || msg.key.fromMe) continue;
+
+            const remoteJid = msg.key.remoteJid;
+            // Solo procesar chats individuales
+            if (!remoteJid || !remoteJid.endsWith('@s.whatsapp.net')) continue;
+
+            // Extraer el contenido de texto
+            const text = msg.message.conversation ||
+                         msg.message.extendedTextMessage?.text ||
+                         msg.message.imageMessage?.caption ||
+                         '';
+
+            if (!text) continue;
+
+            // Limpiar y normalizar el número de teléfono
+            const phoneWithCountry = remoteJid.split('@')[0];
+            let cleanPhone = phoneWithCountry;
+            // Si es de Colombia (57) y tiene 12 dígitos, extraer los últimos 10
+            if (phoneWithCountry.startsWith('57') && phoneWithCountry.length === 12) {
+              cleanPhone = phoneWithCountry.substring(2);
+            }
+
+            const payload = {
+              sender: cleanPhone,
+              text: text,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              timestamp: new Date().toISOString(),
+              fromMe: false,
+              pushName: msg.pushName || 'Paciente',
+            };
+
+            // Guardar el mensaje entrante en SQLite
+            await this.saveMessage(cleanPhone, 'paciente', text);
+
+            console.log('Mensaje de WhatsApp entrante detectado:', payload);
+            this.gateway.emitMessage(payload);
+          }
+        }
+      });
 
       this.sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
@@ -90,9 +148,11 @@ export class WhatsappService implements OnModuleInit {
         }
       });
     } catch (error) {
-      console.error('Error al inicializar Baileys:', error);
+      console.error('Error al inicializar Baileys (posible sesión corrupta):', error);
+      this.clearSession(); // Limpiar sesión corrupta para permitir un nuevo escaneo limpio
       this.status = 'DISCONNECTED';
       this.gateway.emitStatus('DISCONNECTED');
+      this.sock = null;
     }
   }
 
@@ -138,10 +198,49 @@ export class WhatsappService implements OnModuleInit {
       const formattedPhone = `${cleanedPhone}@s.whatsapp.net`;
       await this.sock.sendMessage(formattedPhone, { text: message });
       console.log(`Mensaje enviado con éxito a ${formattedPhone}`);
+
+      // Persistir mensaje enviado en SQLite
+      const cleanPhone = cleanedPhone.startsWith('57') ? cleanedPhone.substring(2) : cleanedPhone;
+      await this.saveMessage(cleanPhone, 'rocita', message);
+
+      // Emitir el mensaje enviado para que se actualice en la interfaz del chat del analista
+      this.gateway.emitMessage({
+        sender: cleanPhone,
+        text: message,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toISOString(),
+        fromMe: true,
+        pushName: 'Rocita',
+        status: 'read'
+      });
+
       return true;
     } catch (err) {
       console.error('Error al enviar mensaje por Baileys:', err);
       return false;
     }
+  }
+
+  async saveMessage(phone: string, sender: 'rocita' | 'paciente', text: string): Promise<ChatMessage> {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + ' ' + (now.getHours() >= 12 ? 'PM' : 'AM');
+
+    const chat = this.chatRepository.create({
+      phone: cleanPhone,
+      sender,
+      text,
+      time: timeString,
+    });
+
+    return this.chatRepository.save(chat);
+  }
+
+  async getChats(phone: string): Promise<ChatMessage[]> {
+    const cleanPhone = phone.replace(/\D/g, '');
+    return this.chatRepository.find({
+      where: { phone: cleanPhone },
+      order: { createdAt: 'ASC' },
+    });
   }
 }

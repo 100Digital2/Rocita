@@ -26,4 +26,8 @@ export class WhatsappGateway implements OnGatewayConnection, OnGatewayDisconnect
   emitStatus(status: 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED') {
     this.server.emit('whatsapp.status', { status });
   }
+
+  emitMessage(message: any) {
+    this.server.emit('whatsapp.message', message);
+  }
 }
