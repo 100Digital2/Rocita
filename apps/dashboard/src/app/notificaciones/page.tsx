@@ -34,7 +34,7 @@ interface Message {
 }
 
 interface NotificationItem {
-  id: string;
+  id: string | number;
   type: 'confirmacion' | 'cancelacion' | 'fallo' | 'sistema';
   patientName?: string;
   doctorName?: string;
@@ -120,36 +120,52 @@ export default function NotificacionesPage() {
   ];
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Proteger la ruta de demo y cargar notificaciones de localStorage
-  useEffect(() => {
-    const auth = localStorage.getItem('rocita_auth');
-    if (!auth) {
-      router.push('/login');
-    } else {
-      setIsAuthenticated(true);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+  const loadNotifications = async () => {
+    setIsLoading(true);
+    const token = localStorage.getItem('rocita_token');
+    try {
+      const res = await fetch(`${apiUrl}/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+        localStorage.setItem('rocita_notifications', JSON.stringify(data));
+      } else {
+        throw new Error(`API error: ${res.status}`);
+      }
+    } catch (err) {
+      console.warn('Backend offline o error al obtener notificaciones, cargando locales.', err);
       const stored = localStorage.getItem('rocita_notifications');
       if (stored) {
         try {
-          const list = JSON.parse(stored);
-          const seen = new Set();
-          const deduplicated = list.map((n: any, idx: number) => {
-            // Si el ID ya existe o no tiene un ID válido, generamos uno nuevo y único
-            if (!n.id || seen.has(n.id)) {
-              n.id = `${n.id || 'notif-dyn'}-fix-${idx}-${Math.random().toString(36).substring(2, 7)}`;
-            }
-            seen.add(n.id);
-            return n;
-          });
-          setNotifications(deduplicated);
+          setNotifications(JSON.parse(stored));
         } catch (e) {
-          console.error('Error al parsear notificaciones de localStorage:', e);
           setNotifications(initialMockNotifications);
         }
       } else {
         setNotifications(initialMockNotifications);
         localStorage.setItem('rocita_notifications', JSON.stringify(initialMockNotifications));
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Proteger la ruta de demo y cargar notificaciones
+  useEffect(() => {
+    const auth = localStorage.getItem('rocita_auth');
+    if (!auth) {
+      router.push('/login');
+    } else {
+      setIsAuthenticated(true);
+      loadNotifications();
     }
   }, [router]);
 
@@ -158,28 +174,94 @@ export default function NotificacionesPage() {
     router.push('/login');
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => {
-      const updated = prev.map(n => (n.id === id ? { ...n, unread: false } : n));
-      localStorage.setItem('rocita_notifications', JSON.stringify(updated));
-      return updated;
-    });
+  const markAsRead = async (id: string | number) => {
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, unread: false } : n)));
+    
+    const token = localStorage.getItem('rocita_token');
+    const isNumericId = typeof id === 'number' || !isNaN(Number(id));
+    if (isNumericId) {
+      try {
+        await fetch(`${apiUrl}/notifications/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ unread: false })
+        });
+      } catch (err) {
+        console.warn('Error al actualizar notificación en el servidor.', err);
+      }
+    }
+
+    const stored = localStorage.getItem('rocita_notifications');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const updated = parsed.map((n: any) => (n.id === id ? { ...n, unread: false } : n));
+        localStorage.setItem('rocita_notifications', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => {
-      const updated = prev.map(n => ({ ...n, unread: false }));
-      localStorage.setItem('rocita_notifications', JSON.stringify(updated));
-      return updated;
-    });
+  const markAllAsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    
+    const token = localStorage.getItem('rocita_token');
+    try {
+      await fetch(`${apiUrl}/notifications/mark-all-read`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (err) {
+      console.warn('Error al marcar todas como leídas en el servidor.', err);
+    }
+
+    const stored = localStorage.getItem('rocita_notifications');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const updated = parsed.map((n: any) => ({ ...n, unread: false }));
+        localStorage.setItem('rocita_notifications', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => {
-      const updated = prev.filter(n => n.id !== id);
-      localStorage.setItem('rocita_notifications', JSON.stringify(updated));
-      return updated;
-    });
+  const deleteNotification = async (id: string | number) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    
+    const token = localStorage.getItem('rocita_token');
+    const isNumericId = typeof id === 'number' || !isNaN(Number(id));
+    if (isNumericId) {
+      try {
+        await fetch(`${apiUrl}/notifications/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        console.warn('Error al eliminar notificación del servidor.', err);
+      }
+    }
+
+    const stored = localStorage.getItem('rocita_notifications');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const updated = parsed.filter((n: any) => n.id !== id);
+        localStorage.setItem('rocita_notifications', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     if (selectedNotification?.id === id) {
       setShowDrawer(false);
       setSelectedNotification(null);

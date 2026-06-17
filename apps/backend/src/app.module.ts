@@ -11,6 +11,8 @@ import { Doctor } from './doctors/doctor.entity';
 import { DoctorsModule } from './doctors/doctors.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { ChatMessage } from './whatsapp/chat-message.entity';
+import { Notification } from './notifications/notification.entity';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -18,13 +20,14 @@ import { ChatMessage } from './whatsapp/chat-message.entity';
       type: 'sqljs',
       autoSave: true,
       location: 'rocita.db',
-      entities: [User, Patient, Doctor, PatientProfile, ChatMessage],
+      entities: [User, Patient, Doctor, PatientProfile, ChatMessage, Notification],
       synchronize: true,
     }),
     AuthModule,
     PatientsModule,
     DoctorsModule,
     WhatsappModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,6 +8,9 @@ import * as QRCode from 'qrcode';
 import pino from 'pino';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Patient } from '../patients/patient.entity';
+import { PatientProfile } from '../patients/patient-profile.entity';
+import { Notification } from '../notifications/notification.entity';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit {
@@ -20,6 +23,12 @@ export class WhatsappService implements OnModuleInit {
     private readonly gateway: WhatsappGateway,
     @InjectRepository(ChatMessage)
     private readonly chatRepository: Repository<ChatMessage>,
+    @InjectRepository(Patient)
+    private readonly patientRepository: Repository<Patient>,
+    @InjectRepository(PatientProfile)
+    private readonly patientProfileRepository: Repository<PatientProfile>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
   ) {}
 
   async onModuleInit() {
@@ -69,8 +78,17 @@ export class WhatsappService implements OnModuleInit {
 
       // Escuchar mensajes entrantes en tiempo real
       this.sock.ev.on('messages.upsert', async (upsert) => {
-        if (upsert.type === 'notify') {
+        console.log(`[Baileys] upsert tipo: ${upsert.type}, cantidad: ${upsert.messages?.length}`);
+        if (upsert.type === 'notify' || upsert.type === 'append') {
           for (const msg of upsert.messages) {
+            // Loguear estructura básica del mensaje para depurar
+            console.log('[Baileys] Mensaje recibido:', {
+              fromMe: msg.key?.fromMe,
+              remoteJid: msg.key?.remoteJid,
+              hasMessage: !!msg.message,
+              messageKeys: msg.message ? Object.keys(msg.message) : [],
+            });
+
             // Ignorar si no tiene mensaje, o si viene de nosotros mismos
             if (!msg.message || msg.key.fromMe) continue;
 
@@ -78,11 +96,32 @@ export class WhatsappService implements OnModuleInit {
             // Solo procesar chats individuales
             if (!remoteJid || !remoteJid.endsWith('@s.whatsapp.net')) continue;
 
-            // Extraer el contenido de texto
-            const text = msg.message.conversation ||
-                         msg.message.extendedTextMessage?.text ||
-                         msg.message.imageMessage?.caption ||
+            // Extraer el contenido de texto de forma extremadamente robusta
+            let messageContent = msg.message;
+            
+            // Desenvolver si es efímero u otros wrappers
+            if (messageContent.ephemeralMessage?.message) {
+              messageContent = messageContent.ephemeralMessage.message;
+            }
+            if (messageContent.viewOnceMessage?.message) {
+              messageContent = messageContent.viewOnceMessage.message;
+            }
+            if (messageContent.viewOnceMessageV2?.message) {
+              messageContent = messageContent.viewOnceMessageV2.message;
+            }
+            if (messageContent.documentWithCaptionMessage?.message) {
+              messageContent = messageContent.documentWithCaptionMessage.message;
+            }
+
+            const text = messageContent.conversation ||
+                         messageContent.extendedTextMessage?.text ||
+                         messageContent.imageMessage?.caption ||
+                         messageContent.buttonsResponseMessage?.selectedButtonId ||
+                         messageContent.templateButtonReplyMessage?.selectedId ||
+                         messageContent.listResponseMessage?.singleSelectReply?.selectedRowId ||
                          '';
+
+            console.log(`[Baileys] Texto extraído: "${text}"`);
 
             if (!text) continue;
 
@@ -108,6 +147,88 @@ export class WhatsappService implements OnModuleInit {
 
             console.log('Mensaje de WhatsApp entrante detectado:', payload);
             this.gateway.emitMessage(payload);
+
+            // B3. Procesamiento y respuestas automatizadas
+            try {
+              // Buscar si este paciente tiene una cita con estado "Pendiente"
+              const patient = await this.patientRepository.findOne({
+                where: { phone: cleanPhone, status: 'Pendiente' },
+                order: { id: 'DESC' }
+              });
+
+              if (patient) {
+                const cleanedText = text.trim().toLowerCase();
+                let newStatus: 'Confirmado' | 'Cancelado' | null = null;
+                let notificationText = '';
+                let notificationType: 'confirmacion' | 'cancelacion' | 'fallo' | 'sistema' = 'sistema';
+
+                if (cleanedText === '1' || cleanedText === 'sí' || cleanedText === 'si' || cleanedText.includes('confirm')) {
+                  newStatus = 'Confirmado';
+                  notificationType = 'confirmacion';
+                  notificationText = `${patient.name} ha confirmado su cita para la especialidad de ${patient.specialty} con el profesional ${patient.doctor} el ${patient.nextAppointment}.`;
+                } else if (cleanedText === '2' || cleanedText === 'no' || cleanedText.includes('cancel')) {
+                  newStatus = 'Cancelado';
+                  notificationType = 'cancelacion';
+                  notificationText = `${patient.name} ha cancelado su cita de ${patient.specialty} con ${patient.doctor} debido a motivos personales.`;
+                }
+
+                if (newStatus) {
+                  // 1. Actualizar el estado de la cita en base de datos
+                  patient.status = newStatus;
+                  await this.patientRepository.save(patient);
+                  console.log(`B3: Cita ID ${patient.id} de ${patient.name} actualizada a ${newStatus} automáticamente.`);
+
+                  // 2. Enviar respuesta automática por WhatsApp
+                  let autoReplyText = '';
+                  if (newStatus === 'Confirmado') {
+                    autoReplyText = `¡Excelente, ${patient.name.split(' ')[0]}! Hemos confirmado tu asistencia de manera automática en el sistema. Recuerda llegar 15 minutos antes.`;
+                  } else {
+                    autoReplyText = `Entendido, ${patient.name.split(' ')[0]}. Hemos cancelado tu cita en el sistema. Si deseas agendar una nueva cita, por favor comunícate con admisiones.`;
+                  }
+                  
+                  // Despachar el mensaje de respuesta automática
+                  await this.sendReminder(cleanPhone, autoReplyText);
+
+                  // 3. Crear alerta / notificación en la base de datos (B2)
+                  const profile = await this.patientProfileRepository.findOne({
+                    where: { documentNumber: patient.documentNumber }
+                  });
+                  const ipsEmail = profile ? profile.ipsEmail : 'admin@rocita.ai';
+
+                  // Cargar el historial del chat para la alerta
+                  const chats = await this.getChats(cleanPhone);
+                  const chatHistory = chats.map(c => ({
+                    sender: c.sender,
+                    text: c.text,
+                    time: c.time
+                  }));
+
+                  const newNotification = this.notificationRepository.create({
+                    type: notificationType,
+                    patientName: patient.name,
+                    doctorName: patient.doctor,
+                    specialty: patient.specialty,
+                    text: notificationText,
+                    time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + ' ' + (new Date().getHours() >= 12 ? 'PM' : 'AM'),
+                    unread: true,
+                    chatHistory: chatHistory,
+                    ipsEmail: ipsEmail
+                  });
+
+                  await this.notificationRepository.save(newNotification);
+                  console.log('B3: Alerta guardada en SQLite con éxito.');
+
+                  // 4. Emitir evento Websocket para actualizar el Dashboard en vivo
+                  this.gateway.server.emit('whatsapp.appointment_update', {
+                    dbId: patient.id,
+                    status: newStatus,
+                    notification: newNotification
+                  });
+                }
+              }
+            } catch (err) {
+              console.error('B3: Error al procesar flujo automatizado de mensajes:', err);
+            }
           }
         }
       });
