@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { WhatsappService } from './whatsapp.service';
+import { WhatsappClientService } from './whatsapp-client.service';
+import { WhatsappQueueService } from './whatsapp-queue.service';
+import { WhatsappMessageProcessor } from './whatsapp-message.processor';
 import { WhatsappGateway } from './whatsapp.gateway';
 import { WhatsappController } from './whatsapp.controller';
 
@@ -14,7 +17,18 @@ import { Notification } from '../notifications/notification.entity';
     TypeOrmModule.forFeature([ChatMessage, Patient, PatientProfile, Notification]),
   ],
   controllers: [WhatsappController],
-  providers: [WhatsappService, WhatsappGateway],
-  exports: [WhatsappService],
+  providers: [
+    WhatsappService,
+    WhatsappClientService,
+    WhatsappQueueService,
+    WhatsappMessageProcessor,
+    WhatsappGateway,
+  ],
+  exports: [
+    WhatsappService,
+    WhatsappClientService,
+    WhatsappQueueService,
+    WhatsappMessageProcessor,
+  ],
 })
 export class WhatsappModule {}

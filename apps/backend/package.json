@@ -32,6 +32,7 @@
     "@nestjs/websockets": "^11.1.26",
     "@whiskeysockets/baileys": "^7.0.0-rc13",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.79.0",
     "pino": "^10.3.1",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
