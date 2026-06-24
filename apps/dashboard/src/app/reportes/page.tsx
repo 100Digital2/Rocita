@@ -22,9 +22,33 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 
+interface ChartBar {
+  d: string;
+  h: number;
+  p: number;
+}
+
+interface RecentActivity {
+  name: string;
+  desc: string;
+}
+
+interface ReportStats {
+  inasistenciaRate: string;
+  ingresosRecuperados: string;
+  confirmacionesHoy: number;
+  tiempoAhorrado: string;
+  chart: ChartBar[];
+  totalAppointments: number;
+  recientes: RecentActivity[];
+}
+
 export default function ReportesPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [stats, setStats] = useState<ReportStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
   useEffect(() => {
     const auth = localStorage.getItem('rocita_auth');
@@ -34,6 +58,26 @@ export default function ReportesPage() {
       setIsAuthenticated(true);
     }
   }, [router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/patients/stats`);
+        if (res.ok) {
+          const data = (await res.json()) as ReportStats;
+          setStats(data);
+        }
+      } catch (err) {
+        console.error('Error fetching reports stats:', err);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, [isAuthenticated, apiUrl]);
 
   const handleLogout = () => {
     localStorage.removeItem('rocita_auth');
@@ -45,15 +89,15 @@ export default function ReportesPage() {
   const kpis = [
     { 
       label: 'Tasa de Inasistencia', 
-      value: '8.2%', 
+      value: stats?.inasistenciaRate || '0.0%', 
       change: '-12.4%', 
       isPositive: true, 
       icon: <TrendingDown className="text-emerald-500" />,
-      desc: 'Reducción vs mes anterior'
+      desc: 'Porcentaje de inasistencia'
     },
     { 
       label: 'Ingresos Recuperados', 
-      value: '$42.5M', 
+      value: stats?.ingresosRecuperados || '$0', 
       change: '+18.2%', 
       isPositive: true, 
       icon: <DollarSign className="text-sky-500" />,
@@ -61,21 +105,38 @@ export default function ReportesPage() {
     },
     { 
       label: 'Confirmaciones Hoy', 
-      value: '184', 
+      value: stats?.confirmacionesHoy !== undefined ? String(stats.confirmacionesHoy) : '0', 
       change: '+5.4%', 
       isPositive: true, 
       icon: <Users className="text-purple-500" />,
-      desc: 'Pacientes que asistirán'
+      desc: 'Pacientes confirmados hoy'
     },
     { 
       label: 'Tiempo Ahorrado', 
-      value: '120h', 
+      value: stats?.tiempoAhorrado || '0h', 
       change: '+15.0%', 
       isPositive: true, 
       icon: <Calendar className="text-amber-500" />,
       desc: 'Horas de llamadas manuales'
     }
   ];
+
+  const chartData: ChartBar[] = stats?.chart || [
+    { d: 'Lun', h: 0, p: 100 },
+    { d: 'Mar', h: 0, p: 100 },
+    { d: 'Mie', h: 0, p: 100 },
+    { d: 'Jue', h: 0, p: 100 },
+    { d: 'Vie', h: 0, p: 100 },
+    { d: 'Sab', h: 0, p: 100 },
+    { d: 'Dom', h: 0, p: 100 }
+  ];
+
+  const recentList: RecentActivity[] = stats?.recientes || [
+    { name: 'Sin actividad reciente', desc: 'No hay citas registradas en la base de datos' }
+  ];
+
+  const totalSent = stats?.totalAppointments || 0;
+  const progressPercent = Math.min(100, Math.round((totalSent / 500) * 100));
 
   return (
     <DashboardLayout
@@ -136,17 +197,9 @@ export default function ReportesPage() {
                 </div>
               </div>
 
-              {/* Fake Bars */}
+              {/* Dynamic Bars */}
               <div className='flex items-end justify-between h-64 gap-2 md:gap-4 px-1 md:px-4'>
-                {[
-                  { d: 'Lun', h: 80, p: 20 },
-                  { d: 'Mar', h: 65, p: 35 },
-                  { d: 'Mie', h: 92, p: 8 },
-                  { d: 'Jue', h: 70, p: 30 },
-                  { d: 'Vie', h: 88, p: 12 },
-                  { d: 'Sab', h: 95, p: 5 },
-                  { d: 'Dom', h: 40, p: 60 }
-                ].map((bar, i) => (
+                {chartData.map((bar: ChartBar, i: number) => (
                   <div key={i} className='flex-1 flex flex-col items-center gap-3 md:gap-4'>
                     <div className='w-full max-w-[24px] sm:max-w-[40px] flex flex-col-reverse h-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-50'>
                       <motion.div 
@@ -177,10 +230,10 @@ export default function ReportesPage() {
                   <div>
                     <div className='flex justify-between text-[11px] md:text-xs font-bold mb-2'>
                       <span>Mensajes Enviados Hoy</span>
-                      <span className='text-sky-400'>2,142 / 5,000</span>
+                      <span className='text-sky-400'>{totalSent} / 500</span>
                     </div>
                     <div className='h-2 bg-slate-800 rounded-full overflow-hidden'>
-                      <div className='h-full bg-sky-500 w-[42%]'></div>
+                      <div className='h-full bg-sky-500' style={{ width: `${progressPercent}%` }}></div>
                     </div>
                   </div>
                   <div>
@@ -203,14 +256,14 @@ export default function ReportesPage() {
               <div className='bg-white border border-blue-100 rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-10 shadow-lg shadow-sky-900/5'>
                 <h3 className='font-black text-base md:text-lg mb-4 md:mb-6'>Recientes</h3>
                 <div className='space-y-4 md:space-y-6'>
-                  {[1, 2, 3].map(i => (
+                  {recentList.map((item: RecentActivity, i: number) => (
                     <div key={i} className='flex items-center gap-3 md:gap-4'>
                       <div className='w-9 h-9 md:w-10 md:h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 shrink-0'>
-                        <Users size={16} />
+                        <User size={16} />
                       </div>
                       <div className='flex-1 min-w-0'>
-                        <p className='text-xs font-black truncate'>Hospital Regional Norte</p>
-                        <p className='text-[9px] md:text-[10px] text-slate-400'>Campaña completada · Hace 2h</p>
+                        <p className='text-xs font-black truncate'>{item.name}</p>
+                        <p className='text-[9px] md:text-[10px] text-slate-400'>{item.desc}</p>
                       </div>
                       <ChevronRight size={14} className='text-slate-300 shrink-0' />
                     </div>

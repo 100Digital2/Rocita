@@ -6,6 +6,11 @@ import { Patient } from './patient.entity';
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
+  @Get('stats')
+  async getStats(): Promise<any> {
+    return this.patientsService.getStats();
+  }
+
   @Get()
   async getAllPatients(): Promise<Patient[]> {
     return this.patientsService.findAll();

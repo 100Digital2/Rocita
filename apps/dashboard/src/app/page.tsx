@@ -216,50 +216,11 @@ export default function Dashboard() {
     let currentNotifs: any[] = [];
     
     if (stored) {
-      currentNotifs = JSON.parse(stored);
-    } else {
-      // Mock inicial
-      currentNotifs = [
-        {
-          id: 'notif-1',
-          type: 'confirmacion',
-          patientName: 'Carlos Humberto Pérez',
-          doctorName: 'Dra. Carolina Gómez',
-          specialty: 'Cardiología',
-          text: 'Carlos Humberto Pérez ha confirmado su cita para el Lunes 25 de Mayo a las 10:30 AM.',
-          time: 'Hace 5 mins',
-          unread: true,
-          chatHistory: [
-            { sender: 'rocita', text: 'Hola Carlos. Te escribe Rocita virtual...', time: '09:00 AM' },
-            { sender: 'paciente', text: 'Hola! Sí claro, allá estaré.', time: '09:02 AM' },
-            { sender: 'rocita', text: '¡Excelente! Hemos confirmado tu asistencia.', time: '09:02 AM' }
-          ]
-        },
-        {
-          id: 'notif-2',
-          type: 'cancelacion',
-          patientName: 'Laura Ruiz',
-          doctorName: 'Dr. Alejandro Restrepo',
-          specialty: 'Dermatología',
-          text: 'Laura Ruiz ha cancelado su cita de Dermatología debido a motivos de fuerza mayor.',
-          time: 'Hace 24 mins',
-          unread: true,
-          chatHistory: [
-            { sender: 'rocita', text: 'Hola Laura. Te escribe Rocita...', time: '08:30 AM' },
-            { sender: 'paciente', text: '2', time: '08:42 AM' },
-            { sender: 'rocita', text: 'Entendido, Laura. Has indicado que NO asistirás.', time: '08:42 AM' }
-          ]
-        },
-        {
-          id: 'notif-3',
-          type: 'fallo',
-          patientName: 'Mateo Sánchez',
-          text: 'Recordatorio fallido: El número de paciente (+57 312 456 7890) no cuenta con una cuenta de WhatsApp activa.',
-          time: 'Hace 1 hora',
-          unread: true,
-          chatHistory: []
-        }
-      ];
+      try {
+        currentNotifs = JSON.parse(stored);
+      } catch (e) {
+        currentNotifs = [];
+      }
     }
 
     const newNotifs = patients.slice(0, 6).map((pat, idx) => {
